@@ -1,0 +1,47 @@
+{
+  "schema": 2,
+  "udp": {
+    "packets": [
+      {
+        "structure": "laptimer",
+        "packet": "session_start",
+        "ip": "<IP_ADDRESS>",
+        "port": 20777,
+        "frequencyHz": 0,
+        "bEnabled": true
+      },
+      {
+        "structure": "laptimer",
+        "packet": "session_update",
+        "ip": "<IP_ADDRESS>",
+        "port": 20777,
+        "frequencyHz": -1,
+        "bEnabled": true
+      },
+      {
+        "structure": "laptimer",
+        "packet": "session_end",
+        "ip": "<IP_ADDRESS>",
+        "port": 20777,
+        "frequencyHz": 0,
+        "bEnabled": true
+      },
+      {
+        "structure": "laptimer",
+        "packet": "session_pause",
+        "ip": "<IP_ADDRESS>",
+        "port": 20777,
+        "frequencyHz": 0,
+        "bEnabled": true
+      },
+      {
+        "structure": "laptimer",
+        "packet": "session_resume",
+        "ip": "<IP_ADDRESS>",
+        "port": 20777,
+        "frequencyHz": 0,
+        "bEnabled": true
+      }
+    ]
+  }
+}

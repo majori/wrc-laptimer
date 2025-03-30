@@ -20,6 +20,8 @@ github.com/duckdb/duckdb-go-bindings/linux-arm64 v0.1.6 h1:lw7DpJ96WFou/ICIQlQDt
 github.com/duckdb/duckdb-go-bindings/linux-arm64 v0.1.6/go.mod h1:o7crKMpT2eOIi5/FY6HPqaXcvieeLSqdXXaXbruGX7w=
 github.com/duckdb/duckdb-go-bindings/windows-amd64 v0.1.6 h1:IB4kJ1dc0GGIv+No8cIjyGWO4OZjY5R3eXT60OoGmeo=
 github.com/duckdb/duckdb-go-bindings/windows-amd64 v0.1.6/go.mod h1:IlOhJdVKUJCAPj3QsDszUo8DVdvp1nBFp4TUJVdw99s=
+github.com/ebfe/scard v0.0.0-20230420082256-7db3f9b7c8a7 h1:HYAhfGa9dEemCZgGZWL5AvVsctBCsHxl2CI0HUXzHQE=
+github.com/ebfe/scard v0.0.0-20230420082256-7db3f9b7c8a7/go.mod h1:BkYEeWL6FbT4Ek+TcOBnPzEKnL7kOq2g19tTQXkorHY=
 github.com/go-viper/mapstructure/v2 v2.2.1 h1:ZAaOCxANMuZx5RCeg0mBdEZk7DZasvvZIxtHqx8aGss=
 github.com/go-viper/mapstructure/v2 v2.2.1/go.mod h1:oJDH3BJKyqBA2TXFhDsKDGDTlndYOZ6rGS0BRZIxGhM=
 github.com/goccy/go-json v0.10.5 h1:Fq85nIqj+gXn/S5ahsiTlK3TmC85qgirsdTP/+DeaC4=
@@ -48,8 +50,8 @@ github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 h1:AMFGa4R4MiIpsp
 github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8/go.mod h1:mC1jAcsrzbxHt8iiaC+zU4b1ylILSosueou12R++wfY=
 github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3 h1:+n/aFZefKZp7spd8DFdX7uMikMLXX4oubIzJF4kv/wI=
 github.com/minio/c2goasm v0.0.0-20190812172519-36a3d3bbc4f3/go.mod h1:RagcQ7I8IeTMnF8JTXieKnO4Z6JCsikNEzj0DwauVzE=
-github.com/nobonobo/obs-codemasters-telemetry v1.1.0 h1:c8OilKtoO4qloEVUZVhMiHfYTzSCbYpjzot1kEJuHxs=
-github.com/nobonobo/obs-codemasters-telemetry v1.1.0/go.mod h1:fhKfWt/w+TBMuI5Lhu75KlY5vqYlWX1lQjFX0aGmX/A=
+github.com/peterhellberg/acr122u v0.0.1 h1:KvMbpTrjRe4+lZXv8XImZH6xO2VuY/LMwrf/hWa/sqw=
+github.com/peterhellberg/acr122u v0.0.1/go.mod h1:b1juVcNM3QXxNO/DpCmxR1fcUm/ki5XD1hWl6xA1uhk=
 github.com/pierrec/lz4/v4 v4.1.22 h1:cKFw6uJDK+/gfw5BcDL0JL5aBsAFdsIT18eRtLj7VIU=
 github.com/pierrec/lz4/v4 v4.1.22/go.mod h1:gZWDp/Ze/IJXGXf23ltt2EXimqmTUXEy0GFuRQyBid4=
 github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZbAQM=

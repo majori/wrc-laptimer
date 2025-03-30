@@ -1,23 +1,48 @@
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE IF NOT EXISTS user_logins (
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id TEXT REFERENCES users(id),
+);
+
+CREATE TABLE IF NOT EXISTS session (
+  id                        INTEGER PRIMARY KEY,
+  user_id                   TEXT REFERENCES users(id),
+  game_mode                 USMALLINT,
+  location_id               USMALLINT,
+  route_id                  USMALLINT,
+  stage_length              DOUBLE,
+  stage_result_status       FLOAT,
+  stage_result_time         FLOAT,
+  stage_result_time_penalty FLOAT,
+  stage_shakedown           BOOLEAN,
+  vehicle_class_id          USMALLINT,
+  vehicle_id                USMALLINT,
+  vehicle_manufacturer_id   USMALLINT,
+);
+
+COMMENT ON COLUMN session.game_mode IS 'Game mode unique identifier. See "game_mode" table.';
+COMMENT ON COLUMN session.location_id IS 'Location unique identifier. See "locations" table.';
+COMMENT ON COLUMN session.route_id IS 'Route unique identifier. See "routes" table.';
+COMMENT ON COLUMN session.stage_length IS 'Total length of current stage. [metre]';
+COMMENT ON COLUMN session.stage_result_status IS 'Unique identifier for stage result status (not finished, finished, disqualified etc.). See "stage_result_status table"';
+COMMENT ON COLUMN session.stage_result_time IS 'Result time. Has a small delay to update after crossing finish line, but guaranteed correct by the time the race telemetry session has ended. Does not take into account retirement or disqualification. [second]';
+COMMENT ON COLUMN session.stage_result_time_penalty IS 'Total time penalty gained [second]';
+COMMENT ON COLUMN session.stage_shakedown IS 'Is in a shakedown event.';
+COMMENT ON COLUMN session.vehicle_class_id IS 'Vehicle class unique identifier. See "vehicle_classes" table.';
+COMMENT ON COLUMN session.vehicle_id IS 'Vehicle unique identifier. See "vehicles" table.';
+COMMENT ON COLUMN session.vehicle_manufacturer_id IS 'Vehicle manufacturer unique identifier. See "vehicle_manufacturers" table.';
+
+
 CREATE TABLE IF NOT EXISTS telemetry (
-  packet_uid                   UBIGINT,
-  packet_4cc                   TEXT,
-  game_delta_time              FLOAT,
-  game_frame_count             UBIGINT,
-  game_total_time              FLOAT,
-  game_mode                    USMALLINT,
-  shiftlights_fraction         FLOAT,
-  shiftlights_rpm_end          FLOAT,
-  shiftlights_rpm_start        FLOAT,
-  shiftlights_rpm_valid        BOOLEAN,
+  session_id                   INTEGER REFERENCES session(id),
   stage_current_distance       DOUBLE,
   stage_current_time           FLOAT,
-  stage_length                 DOUBLE,
   stage_previous_split_time    FLOAT,
-  stage_result_time            FLOAT,
-  stage_result_time_penalty    FLOAT,
-  stage_result_status          USMALLINT,
   stage_progress               FLOAT,
-  stage_shakedown              BOOLEAN,
   vehicle_acceleration_x       FLOAT,
   vehicle_acceleration_y       FLOAT,
   vehicle_acceleration_z       FLOAT,
@@ -51,9 +76,6 @@ CREATE TABLE IF NOT EXISTS telemetry (
   vehicle_hub_velocity_br      FLOAT,
   vehicle_hub_velocity_fl      FLOAT,
   vehicle_hub_velocity_fr      FLOAT,
-  vehicle_id                   USMALLINT,
-  vehicle_class_id             USMALLINT,
-  vehicle_manufacturer_id      USMALLINT,
   vehicle_left_direction_x     FLOAT,
   vehicle_left_direction_y     FLOAT,
   vehicle_left_direction_z     FLOAT,
@@ -74,29 +96,13 @@ CREATE TABLE IF NOT EXISTS telemetry (
   vehicle_velocity_x           FLOAT,
   vehicle_velocity_y           FLOAT,
   vehicle_velocity_z           FLOAT,
-  location_id                  USMALLINT,
-  route_id                     USMALLINT
 );
 
 COMMENT ON COLUMN telemetry.packet_uid IS 'A rolling unique identifier for the current packet. Can be used to order and drop received packets. [count]';
-COMMENT ON COLUMN telemetry.packet_4cc IS 'An automatic channel that exports the packet''s 4CC code. This allows the use of packet headers to receive UDP on a single socket with reliable network connections.';
-COMMENT ON COLUMN telemetry.game_delta_time IS 'Time spent since last frame. [second]';
-COMMENT ON COLUMN telemetry.game_frame_count IS 'Frame count in game since boot. [count]';
-COMMENT ON COLUMN telemetry.game_total_time IS 'Time spent in game since boot. [second]';
-COMMENT ON COLUMN telemetry.game_mode IS 'Game mode unique identifier. See "game_mode" table.';
-COMMENT ON COLUMN telemetry.shiftlights_fraction IS 'For shift lights, from 0 ("vehicle_engine_rpm_current"="shiftlights_rpm_start") to 1 ("vehicle_engine_rpm_current"="shiftlights_rpm_end").';
-COMMENT ON COLUMN telemetry.shiftlights_rpm_end IS 'Shift lights end (i.e. optimal shift) at "vehicle_engine_rpm_current" value. [revolution per minute]';
-COMMENT ON COLUMN telemetry.shiftlights_rpm_start IS 'Shift lights start at "vehicle_engine_rpm_current" value. [revolution per minute]';
-COMMENT ON COLUMN telemetry.shiftlights_rpm_valid IS 'Are shift lights RPM data valid: "vehicle_engine_rpm_current", "shiftlights_rpm_start", "shiftlights_rpm_end"';
 COMMENT ON COLUMN telemetry.stage_current_distance IS 'Distance reached on current stage. [metre]';
 COMMENT ON COLUMN telemetry.stage_current_time IS 'Time spent on current stage. [second]';
-COMMENT ON COLUMN telemetry.stage_length IS 'Total length of current stage. [metre]';
 COMMENT ON COLUMN telemetry.stage_previous_split_time IS 'Split time of previous sector. Value unspecified if no sector completed. [second]';
-COMMENT ON COLUMN telemetry.stage_result_time IS 'Result time. Has a small delay to update after crossing finish line, but guaranteed correct by the time the race telemetry session has ended. Does not take into account retirement or disqualification. [second]';
-COMMENT ON COLUMN telemetry.stage_result_time_penalty IS 'Total time penalty gained [second]';
-COMMENT ON COLUMN telemetry.stage_result_status IS 'Unique identifier for stage result status (not finished, finished, disqualified etc.). See "stage_result_status table"';
 COMMENT ON COLUMN telemetry.stage_progress IS 'Percentage of stage progress 0 to 1 (during race). Value is unspecified before start line and after finish line.';
-COMMENT ON COLUMN telemetry.stage_shakedown IS 'Is in a shakedown event.';
 COMMENT ON COLUMN telemetry.vehicle_acceleration_x IS 'Car acceleration X component, positive left. [metre per second squared]';
 COMMENT ON COLUMN telemetry.vehicle_acceleration_y IS 'Car acceleration Y component, positive up. [metre per second squared]';
 COMMENT ON COLUMN telemetry.vehicle_acceleration_z IS 'Car acceleration Z component, positive forward. [metre per second squared]';
@@ -130,9 +136,6 @@ COMMENT ON COLUMN telemetry.vehicle_hub_velocity_bl IS 'Wheel hub vertical veloc
 COMMENT ON COLUMN telemetry.vehicle_hub_velocity_br IS 'Wheel hub vertical velocity, back right, positive up. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fl IS 'Wheel hub vertical velocity, front left, positive up. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fr IS 'Wheel hub vertical velocity, front right, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_id IS 'Vehicle unique identifier. See "vehicles" table.';
-COMMENT ON COLUMN telemetry.vehicle_class_id IS 'Vehicle class unique identifier. See "vehicle_classes" table.';
-COMMENT ON COLUMN telemetry.vehicle_manufacturer_id IS 'Vehicle manufacturer unique identifier. See "vehicle_manufacturers" table.';
 COMMENT ON COLUMN telemetry.vehicle_left_direction_x IS 'Car left unit vector X component, positive left.';
 COMMENT ON COLUMN telemetry.vehicle_left_direction_y IS 'Car left unit vector Y component, positive up.';
 COMMENT ON COLUMN telemetry.vehicle_left_direction_z IS 'Car left unit vector Z component, positive forward.';
@@ -153,8 +156,7 @@ COMMENT ON COLUMN telemetry.vehicle_up_direction_z IS 'Car up unit vector Z comp
 COMMENT ON COLUMN telemetry.vehicle_velocity_x IS 'Car velocity X component, positive left. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_velocity_y IS 'Car velocity Y component, positive up. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_velocity_z IS 'Car velocity Z component, positive forward. [metre per second]';
-COMMENT ON COLUMN telemetry.location_id IS 'Location unique identifier. See "locations" table.';
-COMMENT ON COLUMN telemetry.route_id IS 'Route unique identifier. See "routes" table.';
+
 
 CREATE TABLE IF NOT EXISTS vehicle_classes (
   id USMALLINT PRIMARY KEY,

@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/caarlos0/env/v6 v6.10.1
 	github.com/marcboeker/go-duckdb/v2 v2.0.2
-	github.com/nobonobo/obs-codemasters-telemetry v1.1.0
+	github.com/peterhellberg/acr122u v0.0.1
 )
 
 require (
@@ -16,6 +16,7 @@ require (
 	github.com/duckdb/duckdb-go-bindings/linux-amd64 v0.1.6 // indirect
 	github.com/duckdb/duckdb-go-bindings/linux-arm64 v0.1.6 // indirect
 	github.com/duckdb/duckdb-go-bindings/windows-amd64 v0.1.6 // indirect
+	github.com/ebfe/scard v0.0.0-20230420082256-7db3f9b7c8a7 // indirect
 	github.com/go-viper/mapstructure/v2 v2.2.1 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/google/flatbuffers v25.1.24+incompatible // indirect
