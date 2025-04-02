@@ -55,34 +55,55 @@ func main() {
 
 	cardEvents := make(chan string, 1)
 	if !config.DisableNFC {
-		err = nfc.ReadCardReader(ctx, cardEvents)
-		if err != nil {
-			log.Printf("could not initialize NFC reader: %s", err.Error())
-		}
+		go func() {
+			err := nfc.ListenForCardEvents(ctx, cardEvents)
+			if err != nil {
+				log.Printf("could not start NFC reader: %s", err.Error())
+			}
+		}()
 	} else {
 		log.Println("NFC reader disabled")
 	}
+
+	go db.ListenForUserLogins(cardEvents)
 
 	for pkt := range packetCh {
 		switch pkt := pkt.(type) {
 		case *telemetry.TelemetrySessionStart:
 			log.Println("Session Start")
-			db.FlushTelemetry()
-			// TODO: Create a new session in the database
+			err = db.FlushTelemetry()
+			if err != nil {
+				log.Printf("could not save telemetry: %s", err.Error())
+			}
+
+			err := db.SaveSession(pkt)
+			if err != nil {
+				log.Printf("could not save session: %s", err.Error())
+			}
+
 		case *telemetry.TelemetrySessionUpdate:
-			log.Println("Session Update")
+			// log.Println("Session Update")
 			err = db.AppendTelemetry(pkt)
 			if err != nil {
 				log.Printf("could not create new appender for telemetry: %s", err.Error())
 			}
+
+		case *telemetry.TelemetrySessionEnd:
+			log.Println("Session End")
+			err = db.FlushTelemetry()
+			if err != nil {
+				log.Printf("could not save telemetry: %s", err.Error())
+			}
+
+			err := db.FinalizeSession(pkt)
+			if err != nil {
+				log.Printf("could not finalize session: %s", err.Error())
+			}
+
 		case *telemetry.TelemetrySessionPause:
 			continue
 		case *telemetry.TelemetrySessionResume:
 			continue
-		case *telemetry.TelemetrySessionEnd:
-			log.Println("Session End")
-			db.FlushTelemetry()
-			// TODO: End the session in the database
 		default:
 			log.Printf("Unknown packet type: %T", pkt)
 		}

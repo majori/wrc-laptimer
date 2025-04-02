@@ -18,6 +18,7 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 	if err != nil {
 		return err
 	}
+	//nolint:errcheck
 	defer conn.Close()
 
 	log.Println("listen udp:", addr)
@@ -40,6 +41,8 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 				done <- err
 				continue
 			}
+
+			// TODO: Drop packets which are in wrong order
 
 			ch <- pkt
 		}

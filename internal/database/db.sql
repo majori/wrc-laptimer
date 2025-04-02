@@ -1,162 +1,3 @@
-CREATE TABLE IF NOT EXISTS users (
-  id TEXT PRIMARY KEY,
-  name TEXT
-);
-
-CREATE TABLE IF NOT EXISTS user_logins (
-  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  user_id TEXT REFERENCES users(id),
-);
-
-CREATE TABLE IF NOT EXISTS session (
-  id                        INTEGER PRIMARY KEY,
-  user_id                   TEXT REFERENCES users(id),
-  game_mode                 USMALLINT,
-  location_id               USMALLINT,
-  route_id                  USMALLINT,
-  stage_length              DOUBLE,
-  stage_result_status       FLOAT,
-  stage_result_time         FLOAT,
-  stage_result_time_penalty FLOAT,
-  stage_shakedown           BOOLEAN,
-  vehicle_class_id          USMALLINT,
-  vehicle_id                USMALLINT,
-  vehicle_manufacturer_id   USMALLINT,
-);
-
-COMMENT ON COLUMN session.game_mode IS 'Game mode unique identifier. See "game_mode" table.';
-COMMENT ON COLUMN session.location_id IS 'Location unique identifier. See "locations" table.';
-COMMENT ON COLUMN session.route_id IS 'Route unique identifier. See "routes" table.';
-COMMENT ON COLUMN session.stage_length IS 'Total length of current stage. [metre]';
-COMMENT ON COLUMN session.stage_result_status IS 'Unique identifier for stage result status (not finished, finished, disqualified etc.). See "stage_result_status table"';
-COMMENT ON COLUMN session.stage_result_time IS 'Result time. Has a small delay to update after crossing finish line, but guaranteed correct by the time the race telemetry session has ended. Does not take into account retirement or disqualification. [second]';
-COMMENT ON COLUMN session.stage_result_time_penalty IS 'Total time penalty gained [second]';
-COMMENT ON COLUMN session.stage_shakedown IS 'Is in a shakedown event.';
-COMMENT ON COLUMN session.vehicle_class_id IS 'Vehicle class unique identifier. See "vehicle_classes" table.';
-COMMENT ON COLUMN session.vehicle_id IS 'Vehicle unique identifier. See "vehicles" table.';
-COMMENT ON COLUMN session.vehicle_manufacturer_id IS 'Vehicle manufacturer unique identifier. See "vehicle_manufacturers" table.';
-
-
-CREATE TABLE IF NOT EXISTS telemetry (
-  session_id                   INTEGER REFERENCES session(id),
-  stage_current_distance       DOUBLE,
-  stage_current_time           FLOAT,
-  stage_previous_split_time    FLOAT,
-  stage_progress               FLOAT,
-  vehicle_acceleration_x       FLOAT,
-  vehicle_acceleration_y       FLOAT,
-  vehicle_acceleration_z       FLOAT,
-  vehicle_brake                FLOAT,
-  vehicle_brake_temperature_bl FLOAT,
-  vehicle_brake_temperature_br FLOAT,
-  vehicle_brake_temperature_fl FLOAT,
-  vehicle_brake_temperature_fr FLOAT,
-  vehicle_clutch               FLOAT,
-  vehicle_cluster_abs          BOOLEAN,
-  vehicle_cp_forward_speed_bl  FLOAT,
-  vehicle_cp_forward_speed_br  FLOAT,
-  vehicle_cp_forward_speed_fl  FLOAT,
-  vehicle_cp_forward_speed_fr  FLOAT,
-  vehicle_engine_rpm_current   FLOAT,
-  vehicle_engine_rpm_idle      FLOAT,
-  vehicle_engine_rpm_max       FLOAT,
-  vehicle_forward_direction_x  FLOAT,
-  vehicle_forward_direction_y  FLOAT,
-  vehicle_forward_direction_z  FLOAT,
-  vehicle_gear_index           USMALLINT,
-  vehicle_gear_index_neutral   USMALLINT,
-  vehicle_gear_index_reverse   USMALLINT,
-  vehicle_gear_maximum         USMALLINT,
-  vehicle_handbrake            FLOAT,
-  vehicle_hub_position_bl      FLOAT,
-  vehicle_hub_position_br      FLOAT,
-  vehicle_hub_position_fl      FLOAT,
-  vehicle_hub_position_fr      FLOAT,
-  vehicle_hub_velocity_bl      FLOAT,
-  vehicle_hub_velocity_br      FLOAT,
-  vehicle_hub_velocity_fl      FLOAT,
-  vehicle_hub_velocity_fr      FLOAT,
-  vehicle_left_direction_x     FLOAT,
-  vehicle_left_direction_y     FLOAT,
-  vehicle_left_direction_z     FLOAT,
-  vehicle_position_x           FLOAT,
-  vehicle_position_y           FLOAT,
-  vehicle_position_z           FLOAT,
-  vehicle_speed                FLOAT,
-  vehicle_steering             FLOAT,
-  vehicle_throttle             FLOAT,
-  vehicle_transmission_speed   FLOAT,
-  vehicle_tyre_state_bl        USMALLINT,
-  vehicle_tyre_state_br        USMALLINT,
-  vehicle_tyre_state_fl        USMALLINT,
-  vehicle_tyre_state_fr        USMALLINT,
-  vehicle_up_direction_x       FLOAT,
-  vehicle_up_direction_y       FLOAT,
-  vehicle_up_direction_z       FLOAT,
-  vehicle_velocity_x           FLOAT,
-  vehicle_velocity_y           FLOAT,
-  vehicle_velocity_z           FLOAT,
-);
-
-COMMENT ON COLUMN telemetry.stage_current_distance IS 'Distance reached on current stage. [metre]';
-COMMENT ON COLUMN telemetry.stage_current_time IS 'Time spent on current stage. [second]';
-COMMENT ON COLUMN telemetry.stage_previous_split_time IS 'Split time of previous sector. Value unspecified if no sector completed. [second]';
-COMMENT ON COLUMN telemetry.stage_progress IS 'Percentage of stage progress 0 to 1 (during race). Value is unspecified before start line and after finish line.';
-COMMENT ON COLUMN telemetry.vehicle_acceleration_x IS 'Car acceleration X component, positive left. [metre per second squared]';
-COMMENT ON COLUMN telemetry.vehicle_acceleration_y IS 'Car acceleration Y component, positive up. [metre per second squared]';
-COMMENT ON COLUMN telemetry.vehicle_acceleration_z IS 'Car acceleration Z component, positive forward. [metre per second squared]';
-COMMENT ON COLUMN telemetry.vehicle_brake IS 'Brake pedal after assists and overrides, 0 (off) to 1 (full).';
-COMMENT ON COLUMN telemetry.vehicle_brake_temperature_bl IS 'Brake temperature, back left. [degree Celsius]';
-COMMENT ON COLUMN telemetry.vehicle_brake_temperature_br IS 'Brake temperature, back right. [degree Celsius]';
-COMMENT ON COLUMN telemetry.vehicle_brake_temperature_fl IS 'Brake temperature, front left. [degree Celsius]';
-COMMENT ON COLUMN telemetry.vehicle_brake_temperature_fr IS 'Brake temperature, front right. [degree Celsius]';
-COMMENT ON COLUMN telemetry.vehicle_clutch IS 'Clutch pedal after assists and overrides, 0 (off) to 1 (full).';
-COMMENT ON COLUMN telemetry.vehicle_cluster_abs IS 'Anti-lock Braking System light active on vehicle cluster.';
-COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_bl IS 'Contact patch forward speed, back left. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_br IS 'Contact patch forward speed, back right. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_fl IS 'Contact patch forward speed, front left. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_fr IS 'Contact patch forward speed, front right. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_engine_rpm_current IS 'Engine rotation rate, current. [revolution per minute]';
-COMMENT ON COLUMN telemetry.vehicle_engine_rpm_idle IS 'Engine rotation rate, at idle. [revolution per minute]';
-COMMENT ON COLUMN telemetry.vehicle_engine_rpm_max IS 'Engine rotation rate, maximum. [revolution per minute]';
-COMMENT ON COLUMN telemetry.vehicle_forward_direction_x IS 'Car forward unit vector X component, positive left.';
-COMMENT ON COLUMN telemetry.vehicle_forward_direction_y IS 'Car forward unit vector Y component, positive up.';
-COMMENT ON COLUMN telemetry.vehicle_forward_direction_z IS 'Car forward unit vector Z component, positive forward.';
-COMMENT ON COLUMN telemetry.vehicle_gear_index IS 'Gear index or value of "vehicle_gear_index_neutral" or "vehicle_gear_index_reverse"';
-COMMENT ON COLUMN telemetry.vehicle_gear_index_neutral IS '"vehicle_gear_index" if gearbox in Neutral.';
-COMMENT ON COLUMN telemetry.vehicle_gear_index_reverse IS '"vehicle_gear_index" if gearbox in Reverse.';
-COMMENT ON COLUMN telemetry.vehicle_gear_maximum IS 'Number of forward gears.';
-COMMENT ON COLUMN telemetry.vehicle_handbrake IS 'Handbrake after assists and overrides, 0 (off) to 1 (full).';
-COMMENT ON COLUMN telemetry.vehicle_hub_position_bl IS 'Wheel hub height displacement, back left, positive up. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_hub_position_br IS 'Wheel hub height displacement, back right, positive up. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_hub_position_fl IS 'Wheel hub height displacement, front left, positive up. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_hub_position_fr IS 'Wheel hub height displacement, front right, positive up. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_hub_velocity_bl IS 'Wheel hub vertical velocity, back left, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_hub_velocity_br IS 'Wheel hub vertical velocity, back right, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fl IS 'Wheel hub vertical velocity, front left, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fr IS 'Wheel hub vertical velocity, front right, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_left_direction_x IS 'Car left unit vector X component, positive left.';
-COMMENT ON COLUMN telemetry.vehicle_left_direction_y IS 'Car left unit vector Y component, positive up.';
-COMMENT ON COLUMN telemetry.vehicle_left_direction_z IS 'Car left unit vector Z component, positive forward.';
-COMMENT ON COLUMN telemetry.vehicle_position_x IS 'Car position X component, positive left. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_position_y IS 'Car position Y component, positive up. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_position_z IS 'Car position Z component, positive forward. [metre]';
-COMMENT ON COLUMN telemetry.vehicle_speed IS 'Car body speed. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_steering IS 'Steering after assists and overrides, -1 (full left) to 1 (full right).';
-COMMENT ON COLUMN telemetry.vehicle_throttle IS 'Throttle pedal after assists and overrides, 0 (off) to 1 (full).';
-COMMENT ON COLUMN telemetry.vehicle_transmission_speed IS 'Car speed at wheel/road due to transmission (for speedo use). NB. May differ from "vehicle_speed". [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_tyre_state_bl IS 'Unique identifier for tyre state (e.g. undamaged, punctured), back left. See "vehicle_tyre_state" table.';
-COMMENT ON COLUMN telemetry.vehicle_tyre_state_br IS 'Unique identifier for tyre state (e.g. undamaged, punctured), back right. See "vehicle_tyre_state" table.';
-COMMENT ON COLUMN telemetry.vehicle_tyre_state_fl IS 'Unique identifier for tyre state (e.g. undamaged, punctured), front left. See "vehicle_tyre_state" table.';
-COMMENT ON COLUMN telemetry.vehicle_tyre_state_fr IS 'Unique identifier for tyre state (e.g. undamaged, punctured), front right. See "vehicle_tyre_state" table.';
-COMMENT ON COLUMN telemetry.vehicle_up_direction_x IS 'Car up unit vector X component, positive left.';
-COMMENT ON COLUMN telemetry.vehicle_up_direction_y IS 'Car up unit vector Y component, positive up.';
-COMMENT ON COLUMN telemetry.vehicle_up_direction_z IS 'Car up unit vector Z component, positive forward.';
-COMMENT ON COLUMN telemetry.vehicle_velocity_x IS 'Car velocity X component, positive left. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_velocity_y IS 'Car velocity Y component, positive up. [metre per second]';
-COMMENT ON COLUMN telemetry.vehicle_velocity_z IS 'Car velocity Z component, positive forward. [metre per second]';
-
-
 CREATE TABLE IF NOT EXISTS vehicle_classes (
   id USMALLINT PRIMARY KEY,
   name TEXT
@@ -658,3 +499,164 @@ INSERT OR IGNORE INTO stage_result_states(id, name) VALUES
   (4, 'retired'),
   (5, 'disqualified'),
   (6, 'unknown');
+
+CREATE TABLE IF NOT EXISTS users (
+  id TEXT PRIMARY KEY,
+  name TEXT
+);
+
+CREATE TABLE IF NOT EXISTS user_logins (
+  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id TEXT REFERENCES users(id),
+);
+
+CREATE SEQUENCE IF NOT EXISTS session_id_sequence START 1;
+
+CREATE TABLE IF NOT EXISTS sessions (
+  id                        UINTEGER PRIMARY KEY DEFAULT nextval('session_id_sequence'),
+  started_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  user_id                   TEXT REFERENCES users(id),
+  game_mode                 USMALLINT,
+  location_id               USMALLINT,
+  route_id                  USMALLINT,
+  stage_length              DOUBLE,
+  stage_result_status       USMALLINT REFERENCES stage_result_states(id),
+  stage_result_time         FLOAT,
+  stage_result_time_penalty FLOAT,
+  stage_shakedown           BOOLEAN,
+  vehicle_class_id          USMALLINT,
+  vehicle_id                USMALLINT,
+  vehicle_manufacturer_id   USMALLINT,
+);
+
+COMMENT ON COLUMN sessions.game_mode IS 'Game mode unique identifier. See "game_mode" table.';
+COMMENT ON COLUMN sessions.location_id IS 'Location unique identifier. See "locations" table.';
+COMMENT ON COLUMN sessions.route_id IS 'Route unique identifier. See "routes" table.';
+COMMENT ON COLUMN sessions.stage_length IS 'Total length of current stage. [metre]';
+COMMENT ON COLUMN sessions.stage_result_status IS 'Unique identifier for stage result status (not finished, finished, disqualified etc.). See "stage_result_status table"';
+COMMENT ON COLUMN sessions.stage_result_time IS 'Result time. Has a small delay to update after crossing finish line, but guaranteed correct by the time the race telemetry session has ended. Does not take into account retirement or disqualification. [second]';
+COMMENT ON COLUMN sessions.stage_result_time_penalty IS 'Total time penalty gained [second]';
+COMMENT ON COLUMN sessions.stage_shakedown IS 'Is in a shakedown event.';
+COMMENT ON COLUMN sessions.vehicle_class_id IS 'Vehicle class unique identifier. See "vehicle_classes" table.';
+COMMENT ON COLUMN sessions.vehicle_id IS 'Vehicle unique identifier. See "vehicles" table.';
+COMMENT ON COLUMN sessions.vehicle_manufacturer_id IS 'Vehicle manufacturer unique identifier. See "vehicle_manufacturers" table.';
+
+
+CREATE TABLE IF NOT EXISTS telemetry (
+  timestamp                    TIMESTAMP,
+  stage_current_distance       DOUBLE,
+  stage_current_time           FLOAT,
+  stage_previous_split_time    FLOAT,
+  stage_progress               FLOAT,
+  vehicle_acceleration_x       FLOAT,
+  vehicle_acceleration_y       FLOAT,
+  vehicle_acceleration_z       FLOAT,
+  vehicle_brake                FLOAT,
+  vehicle_brake_temperature_bl FLOAT,
+  vehicle_brake_temperature_br FLOAT,
+  vehicle_brake_temperature_fl FLOAT,
+  vehicle_brake_temperature_fr FLOAT,
+  vehicle_clutch               FLOAT,
+  vehicle_cluster_abs          BOOLEAN,
+  vehicle_cp_forward_speed_bl  FLOAT,
+  vehicle_cp_forward_speed_br  FLOAT,
+  vehicle_cp_forward_speed_fl  FLOAT,
+  vehicle_cp_forward_speed_fr  FLOAT,
+  vehicle_engine_rpm_current   FLOAT,
+  vehicle_engine_rpm_idle      FLOAT,
+  vehicle_engine_rpm_max       FLOAT,
+  vehicle_forward_direction_x  FLOAT,
+  vehicle_forward_direction_y  FLOAT,
+  vehicle_forward_direction_z  FLOAT,
+  vehicle_gear_index           USMALLINT,
+  vehicle_gear_index_neutral   USMALLINT,
+  vehicle_gear_index_reverse   USMALLINT,
+  vehicle_gear_maximum         USMALLINT,
+  vehicle_handbrake            FLOAT,
+  vehicle_hub_position_bl      FLOAT,
+  vehicle_hub_position_br      FLOAT,
+  vehicle_hub_position_fl      FLOAT,
+  vehicle_hub_position_fr      FLOAT,
+  vehicle_hub_velocity_bl      FLOAT,
+  vehicle_hub_velocity_br      FLOAT,
+  vehicle_hub_velocity_fl      FLOAT,
+  vehicle_hub_velocity_fr      FLOAT,
+  vehicle_left_direction_x     FLOAT,
+  vehicle_left_direction_y     FLOAT,
+  vehicle_left_direction_z     FLOAT,
+  vehicle_position_x           FLOAT,
+  vehicle_position_y           FLOAT,
+  vehicle_position_z           FLOAT,
+  vehicle_speed                FLOAT,
+  vehicle_steering             FLOAT,
+  vehicle_throttle             FLOAT,
+  vehicle_transmission_speed   FLOAT,
+  vehicle_tyre_state_bl        USMALLINT,
+  vehicle_tyre_state_br        USMALLINT,
+  vehicle_tyre_state_fl        USMALLINT,
+  vehicle_tyre_state_fr        USMALLINT,
+  vehicle_up_direction_x       FLOAT,
+  vehicle_up_direction_y       FLOAT,
+  vehicle_up_direction_z       FLOAT,
+  vehicle_velocity_x           FLOAT,
+  vehicle_velocity_y           FLOAT,
+  vehicle_velocity_z           FLOAT,
+);
+
+COMMENT ON COLUMN telemetry.stage_current_distance IS 'Distance reached on current stage. [metre]';
+COMMENT ON COLUMN telemetry.stage_current_time IS 'Time spent on current stage. [second]';
+COMMENT ON COLUMN telemetry.stage_previous_split_time IS 'Split time of previous sector. Value unspecified if no sector completed. [second]';
+COMMENT ON COLUMN telemetry.stage_progress IS 'Percentage of stage progress 0 to 1 (during race). Value is unspecified before start line and after finish line.';
+COMMENT ON COLUMN telemetry.vehicle_acceleration_x IS 'Car acceleration X component, positive left. [metre per second squared]';
+COMMENT ON COLUMN telemetry.vehicle_acceleration_y IS 'Car acceleration Y component, positive up. [metre per second squared]';
+COMMENT ON COLUMN telemetry.vehicle_acceleration_z IS 'Car acceleration Z component, positive forward. [metre per second squared]';
+COMMENT ON COLUMN telemetry.vehicle_brake IS 'Brake pedal after assists and overrides, 0 (off) to 1 (full).';
+COMMENT ON COLUMN telemetry.vehicle_brake_temperature_bl IS 'Brake temperature, back left. [degree Celsius]';
+COMMENT ON COLUMN telemetry.vehicle_brake_temperature_br IS 'Brake temperature, back right. [degree Celsius]';
+COMMENT ON COLUMN telemetry.vehicle_brake_temperature_fl IS 'Brake temperature, front left. [degree Celsius]';
+COMMENT ON COLUMN telemetry.vehicle_brake_temperature_fr IS 'Brake temperature, front right. [degree Celsius]';
+COMMENT ON COLUMN telemetry.vehicle_clutch IS 'Clutch pedal after assists and overrides, 0 (off) to 1 (full).';
+COMMENT ON COLUMN telemetry.vehicle_cluster_abs IS 'Anti-lock Braking System light active on vehicle cluster.';
+COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_bl IS 'Contact patch forward speed, back left. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_br IS 'Contact patch forward speed, back right. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_fl IS 'Contact patch forward speed, front left. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_cp_forward_speed_fr IS 'Contact patch forward speed, front right. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_engine_rpm_current IS 'Engine rotation rate, current. [revolution per minute]';
+COMMENT ON COLUMN telemetry.vehicle_engine_rpm_idle IS 'Engine rotation rate, at idle. [revolution per minute]';
+COMMENT ON COLUMN telemetry.vehicle_engine_rpm_max IS 'Engine rotation rate, maximum. [revolution per minute]';
+COMMENT ON COLUMN telemetry.vehicle_forward_direction_x IS 'Car forward unit vector X component, positive left.';
+COMMENT ON COLUMN telemetry.vehicle_forward_direction_y IS 'Car forward unit vector Y component, positive up.';
+COMMENT ON COLUMN telemetry.vehicle_forward_direction_z IS 'Car forward unit vector Z component, positive forward.';
+COMMENT ON COLUMN telemetry.vehicle_gear_index IS 'Gear index or value of "vehicle_gear_index_neutral" or "vehicle_gear_index_reverse"';
+COMMENT ON COLUMN telemetry.vehicle_gear_index_neutral IS '"vehicle_gear_index" if gearbox in Neutral.';
+COMMENT ON COLUMN telemetry.vehicle_gear_index_reverse IS '"vehicle_gear_index" if gearbox in Reverse.';
+COMMENT ON COLUMN telemetry.vehicle_gear_maximum IS 'Number of forward gears.';
+COMMENT ON COLUMN telemetry.vehicle_handbrake IS 'Handbrake after assists and overrides, 0 (off) to 1 (full).';
+COMMENT ON COLUMN telemetry.vehicle_hub_position_bl IS 'Wheel hub height displacement, back left, positive up. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_hub_position_br IS 'Wheel hub height displacement, back right, positive up. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_hub_position_fl IS 'Wheel hub height displacement, front left, positive up. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_hub_position_fr IS 'Wheel hub height displacement, front right, positive up. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_hub_velocity_bl IS 'Wheel hub vertical velocity, back left, positive up. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_hub_velocity_br IS 'Wheel hub vertical velocity, back right, positive up. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fl IS 'Wheel hub vertical velocity, front left, positive up. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_hub_velocity_fr IS 'Wheel hub vertical velocity, front right, positive up. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_left_direction_x IS 'Car left unit vector X component, positive left.';
+COMMENT ON COLUMN telemetry.vehicle_left_direction_y IS 'Car left unit vector Y component, positive up.';
+COMMENT ON COLUMN telemetry.vehicle_left_direction_z IS 'Car left unit vector Z component, positive forward.';
+COMMENT ON COLUMN telemetry.vehicle_position_x IS 'Car position X component, positive left. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_position_y IS 'Car position Y component, positive up. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_position_z IS 'Car position Z component, positive forward. [metre]';
+COMMENT ON COLUMN telemetry.vehicle_speed IS 'Car body speed. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_steering IS 'Steering after assists and overrides, -1 (full left) to 1 (full right).';
+COMMENT ON COLUMN telemetry.vehicle_throttle IS 'Throttle pedal after assists and overrides, 0 (off) to 1 (full).';
+COMMENT ON COLUMN telemetry.vehicle_transmission_speed IS 'Car speed at wheel/road due to transmission (for speedo use). NB. May differ from "vehicle_speed". [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_tyre_state_bl IS 'Unique identifier for tyre state (e.g. undamaged, punctured), back left. See "vehicle_tyre_state" table.';
+COMMENT ON COLUMN telemetry.vehicle_tyre_state_br IS 'Unique identifier for tyre state (e.g. undamaged, punctured), back right. See "vehicle_tyre_state" table.';
+COMMENT ON COLUMN telemetry.vehicle_tyre_state_fl IS 'Unique identifier for tyre state (e.g. undamaged, punctured), front left. See "vehicle_tyre_state" table.';
+COMMENT ON COLUMN telemetry.vehicle_tyre_state_fr IS 'Unique identifier for tyre state (e.g. undamaged, punctured), front right. See "vehicle_tyre_state" table.';
+COMMENT ON COLUMN telemetry.vehicle_up_direction_x IS 'Car up unit vector X component, positive left.';
+COMMENT ON COLUMN telemetry.vehicle_up_direction_y IS 'Car up unit vector Y component, positive up.';
+COMMENT ON COLUMN telemetry.vehicle_up_direction_z IS 'Car up unit vector Z component, positive forward.';
+COMMENT ON COLUMN telemetry.vehicle_velocity_x IS 'Car velocity X component, positive left. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_velocity_y IS 'Car velocity Y component, positive up. [metre per second]';
+COMMENT ON COLUMN telemetry.vehicle_velocity_z IS 'Car velocity Z component, positive forward. [metre per second]';
