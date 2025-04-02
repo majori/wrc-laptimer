@@ -1,5 +1,8 @@
 version: "3"
 
+env:
+  DISABLE_NFC: true
+
 tasks:
   default:
     desc: Lists available tasks
@@ -9,7 +12,7 @@ tasks:
   build:
     desc: Build the application
     cmds:
-      - go build -o bin/wrc-laptimer .
+      - go build -o bin/wrc-laptimer cmd/wrc-laptimer/main.go
     sources:
       - "**/*.go"
     generates:

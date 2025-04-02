@@ -11,12 +11,14 @@ import (
 	"time"
 
 	env "github.com/caarlos0/env/v6"
+	"github.com/majori/wrc-laptimer/pkg/telemetry"
 	"github.com/marcboeker/go-duckdb/v2"
 	"github.com/peterhellberg/acr122u"
 )
 
 type Config struct {
-	ListenUDP string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
+	ListenUDP  string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
+	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 
 var (
@@ -64,7 +66,11 @@ func main() {
 		}
 	}()
 
-	go startCardReader(ctx, db)
+	if !config.DisableNFC {
+		go startCardReader(ctx, db)
+	} else {
+		log.Println("NFC reader disabled")
+	}
 
 	appender, err := duckdb.NewAppenderFromConn(dbConnection, "", "telemetry")
 	if err != nil {
@@ -74,10 +80,10 @@ func main() {
 
 	for pkt := range udpCh {
 		switch pkt := pkt.(type) {
-		case *TelemetrySessionStart:
+		case *telemetry.TelemetrySessionStart:
 			log.Println("Session Start")
 			// TODO: Create a new session in the database
-		case *TelemetrySessionUpdate:
+		case *telemetry.TelemetrySessionUpdate:
 			log.Println("Session Update")
 			appender.AppendRow(
 				nil,
@@ -139,11 +145,11 @@ func main() {
 				pkt.VehicleVelocityY,
 				pkt.VehicleVelocityZ,
 			)
-		case *TelemetrySessionPause:
+		case *telemetry.TelemetrySessionPause:
 			continue
-		case *TelemetrySessionResume:
+		case *telemetry.TelemetrySessionResume:
 			continue
-		case *TelemetrySessionEnd:
+		case *telemetry.TelemetrySessionEnd:
 			log.Println("Session End")
 			// TODO: End the session in the database
 		default:
@@ -201,7 +207,7 @@ func udpReceiver(ctx context.Context, ch chan<- any) error {
 			}
 
 			// Process only the bytes that were read
-			pkt, err := UnmarshalBinary(b[:n])
+			pkt, err := telemetry.UnmarshalBinary(b[:n])
 			if err != nil {
 				done <- err
 				continue

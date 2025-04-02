@@ -1,4 +1,4 @@
-module github.com/majori/wrc
+module github.com/majori/wrc-laptimer
 
 go 1.24.1
 
