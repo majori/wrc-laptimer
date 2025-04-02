@@ -98,7 +98,6 @@ CREATE TABLE IF NOT EXISTS telemetry (
   vehicle_velocity_z           FLOAT,
 );
 
-COMMENT ON COLUMN telemetry.packet_uid IS 'A rolling unique identifier for the current packet. Can be used to order and drop received packets. [count]';
 COMMENT ON COLUMN telemetry.stage_current_distance IS 'Distance reached on current stage. [metre]';
 COMMENT ON COLUMN telemetry.stage_current_time IS 'Time spent on current stage. [second]';
 COMMENT ON COLUMN telemetry.stage_previous_split_time IS 'Split time of previous sector. Value unspecified if no sector completed. [second]';

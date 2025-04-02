@@ -2,18 +2,14 @@ package main
 
 import (
 	"context"
-	"crypto/sha256"
-	"database/sql"
-	_ "embed"
-	"encoding/base64"
+
 	"log"
-	"net"
 	"time"
 
 	env "github.com/caarlos0/env/v6"
+	"github.com/majori/wrc-laptimer/internal/database"
+	"github.com/majori/wrc-laptimer/internal/nfc"
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
-	"github.com/marcboeker/go-duckdb/v2"
-	"github.com/peterhellberg/acr122u"
 )
 
 type Config struct {
@@ -37,25 +33,16 @@ func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	connector, err := duckdb.NewConnector("wrc.db?access_mode=READ_WRITE", nil)
+	db, err := database.NewDatabase(ctx, "wrc.db?access_mode=READ_WRITE")
 	if err != nil {
-		log.Fatalf("could not initialize new connector: %s", err.Error())
+		log.Fatalf("could not open database: %s", err.Error())
 	}
-
-	dbConnection, err := connector.Connect(ctx)
-	if err != nil {
-		log.Fatalf("could not connect: %s", err.Error())
-	}
-
-	db := sql.OpenDB(connector)
 	defer db.Close()
 
-	initDB(db)
-
-	udpCh := make(chan any, 64)
+	packetCh := make(chan any, 64)
 	go func() {
 		for {
-			if err := udpReceiver(ctx, udpCh); err != nil {
+			if err := telemetry.StartUDPReceiver(ctx, config.ListenUDP, packetCh); err != nil {
 				log.Print(err)
 
 				// Retry receiving UDP packets after 5 seconds
@@ -66,170 +53,38 @@ func main() {
 		}
 	}()
 
+	cardEvents := make(chan string, 1)
 	if !config.DisableNFC {
-		go startCardReader(ctx, db)
+		err = nfc.ReadCardReader(ctx, cardEvents)
+		if err != nil {
+			log.Printf("could not initialize NFC reader: %s", err.Error())
+		}
 	} else {
 		log.Println("NFC reader disabled")
 	}
 
-	appender, err := duckdb.NewAppenderFromConn(dbConnection, "", "telemetry")
-	if err != nil {
-		log.Fatalf("could not create new appender for telemetry: %s", err.Error())
-	}
-	defer appender.Close()
-
-	for pkt := range udpCh {
+	for pkt := range packetCh {
 		switch pkt := pkt.(type) {
 		case *telemetry.TelemetrySessionStart:
 			log.Println("Session Start")
+			db.FlushTelemetry()
 			// TODO: Create a new session in the database
 		case *telemetry.TelemetrySessionUpdate:
 			log.Println("Session Update")
-			appender.AppendRow(
-				nil,
-				pkt.StageCurrentDistance,
-				pkt.StageCurrentTime,
-				pkt.StagePreviousSplitTime,
-				pkt.StageProgress,
-				pkt.VehicleAccelerationX,
-				pkt.VehicleAccelerationY,
-				pkt.VehicleAccelerationZ,
-				pkt.VehicleBrake,
-				pkt.VehicleBrakeTemperatureBl,
-				pkt.VehicleBrakeTemperatureBr,
-				pkt.VehicleBrakeTemperatureFl,
-				pkt.VehicleBrakeTemperatureFr,
-				pkt.VehicleClutch,
-				pkt.VehicleClusterAbs,
-				pkt.VehicleCpForwardSpeedBl,
-				pkt.VehicleCpForwardSpeedBr,
-				pkt.VehicleCpForwardSpeedFl,
-				pkt.VehicleCpForwardSpeedFr,
-				pkt.VehicleEngineRpmCurrent,
-				pkt.VehicleEngineRpmIdle,
-				pkt.VehicleEngineRpmMax,
-				pkt.VehicleForwardDirectionX,
-				pkt.VehicleForwardDirectionY,
-				pkt.VehicleForwardDirectionZ,
-				pkt.VehicleGearIndex,
-				pkt.VehicleGearIndexNeutral,
-				pkt.VehicleGearIndexReverse,
-				pkt.VehicleGearMaximum,
-				pkt.VehicleHandbrake,
-				pkt.VehicleHubPositionBl,
-				pkt.VehicleHubPositionBr,
-				pkt.VehicleHubPositionFl,
-				pkt.VehicleHubPositionFr,
-				pkt.VehicleHubVelocityBl,
-				pkt.VehicleHubVelocityBr,
-				pkt.VehicleHubVelocityFl,
-				pkt.VehicleHubVelocityFr,
-				pkt.VehicleLeftDirectionX,
-				pkt.VehicleLeftDirectionY,
-				pkt.VehicleLeftDirectionZ,
-				pkt.VehiclePositionX,
-				pkt.VehiclePositionY,
-				pkt.VehiclePositionZ,
-				pkt.VehicleSpeed,
-				pkt.VehicleSteering,
-				pkt.VehicleThrottle,
-				pkt.VehicleTransmissionSpeed,
-				pkt.VehicleTyreStateBl,
-				pkt.VehicleTyreStateBr,
-				pkt.VehicleTyreStateFl,
-				pkt.VehicleTyreStateFr,
-				pkt.VehicleUpDirectionX,
-				pkt.VehicleUpDirectionY,
-				pkt.VehicleUpDirectionZ,
-				pkt.VehicleVelocityX,
-				pkt.VehicleVelocityY,
-				pkt.VehicleVelocityZ,
-			)
+			err = db.AppendTelemetry(pkt)
+			if err != nil {
+				log.Printf("could not create new appender for telemetry: %s", err.Error())
+			}
 		case *telemetry.TelemetrySessionPause:
 			continue
 		case *telemetry.TelemetrySessionResume:
 			continue
 		case *telemetry.TelemetrySessionEnd:
 			log.Println("Session End")
+			db.FlushTelemetry()
 			// TODO: End the session in the database
 		default:
 			log.Printf("Unknown packet type: %T", pkt)
 		}
-	}
-}
-
-func startCardReader(ctx context.Context, db *sql.DB) {
-	readerCtx, err := acr122u.EstablishContext()
-	if err != nil {
-		panic(err)
-	}
-
-	log.Println("ready for smartcard events")
-	readerCtx.ServeFunc(func(c acr122u.Card) {
-		hasher := sha256.New()
-		hasher.Write(c.UID())
-		userID := base64.URLEncoding.EncodeToString(hasher.Sum(nil))
-		// TODO: Add userID to the database if it doesn't exist
-
-		_, err := db.ExecContext(ctx, "INSERT INTO user_logins (user_id) VALUES (?)", userID)
-		if err != nil {
-			log.Printf("Error inserting user: %v", err)
-		}
-	})
-}
-
-func udpReceiver(ctx context.Context, ch chan<- any) error {
-	// Validate the UDP address
-	host, port, err := net.SplitHostPort(config.ListenUDP)
-	if err != nil {
-		return err
-	}
-
-	addr := net.JoinHostPort(host, port)
-	conn, err := net.ListenPacket("udp", addr)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
-
-	log.Println("listen udp:", addr)
-	defer log.Println("udp closed:", addr)
-
-	done := make(chan error, 1)
-	go func() {
-		// Create a buffer large enough
-		b := make([]byte, 256)
-		for {
-			n, _, err := conn.ReadFrom(b)
-			if err != nil {
-				done <- err
-				continue
-			}
-
-			// Process only the bytes that were read
-			pkt, err := telemetry.UnmarshalBinary(b[:n])
-			if err != nil {
-				done <- err
-				continue
-			}
-
-			ch <- pkt
-		}
-	}()
-	select {
-	case err := <-done:
-		return err
-	case <-ctx.Done():
-	}
-	return nil
-}
-
-//go:embed db.sql
-var dbSchema string
-
-func initDB(db *sql.DB) {
-	_, err := db.Exec(dbSchema)
-	if err != nil {
-		panic(err)
 	}
 }

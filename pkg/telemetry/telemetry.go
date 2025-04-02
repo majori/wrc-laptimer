@@ -115,18 +115,18 @@ var (
 	ErrUnknownPacketType = errors.New("unknown packet type")
 )
 
-func UnmarshalBinary(data []byte) (any, error) {
+func UnmarshalBinary(data []byte) (*Header, any, error) {
 	// Check if data is large enough to contain at least a header
 	if len(data) < PacketHeaderSize {
-		return nil, ErrInvalidPacket
+		return nil, nil, ErrInvalidPacket
 	}
 
 	// Create a reader for binary data
 	buf := bytes.NewReader(data)
 
-	var header Header
-	if err := binary.Read(buf, binary.LittleEndian, &header); err != nil {
-		return nil, err
+	header := new(Header)
+	if err := binary.Read(buf, binary.LittleEndian, header); err != nil {
+		return nil, nil, err
 	}
 
 	// Convert 4CC to string for easier comparison
@@ -150,9 +150,9 @@ func UnmarshalBinary(data []byte) (any, error) {
 		packet = new(TelemetrySessionEnd)
 
 	default:
-		return nil, ErrUnknownPacketType
+		return nil, nil, ErrUnknownPacketType
 	}
 
 	err := binary.Read(buf, binary.LittleEndian, packet)
-	return packet, err
+	return header, packet, err
 }
