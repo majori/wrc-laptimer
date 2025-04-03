@@ -15,6 +15,11 @@ jobs:
           go-version: "1.24"
           cache: false # Disable cache since golangci-lint does its own caching
 
+      - name: Install pcsc-lite
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pcscd libpcsclite1 libpcsclite-dev
+
       - name: Lint source code
         uses: golangci/golangci-lint-action@v4
         with:
