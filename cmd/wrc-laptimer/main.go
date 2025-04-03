@@ -80,6 +80,7 @@ func main() {
 			if err != nil {
 				log.Printf("could not save session: %s", err.Error())
 			}
+			log.Println("Session saved")
 
 		case *telemetry.TelemetrySessionUpdate:
 			// log.Println("Session Update")
@@ -99,6 +100,7 @@ func main() {
 			if err != nil {
 				log.Printf("could not finalize session: %s", err.Error())
 			}
+			log.Println("Session finalized")
 
 		case *telemetry.TelemetrySessionPause:
 			continue
