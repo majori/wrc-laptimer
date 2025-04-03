@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"fmt"
 )
 
 type Header struct {
@@ -93,14 +94,13 @@ type TelemetrySessionResume struct {
 }
 
 type TelemetrySessionEnd struct {
-	Header
 	StageResultTime        float32
 	StageResultTimePenalty float32
 	StageResultStatus      uint8
 }
 
 const (
-	PacketHeaderSize = 16
+	PacketHeaderSize = 12 // Size of the header in bytes
 
 	// Packet type constants
 	Packet4CCSessionStart  = "sess"
@@ -126,7 +126,7 @@ func UnmarshalBinary(data []byte) (*Header, any, error) {
 
 	header := new(Header)
 	if err := binary.Read(buf, binary.LittleEndian, header); err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("error when reading telemetry header: %w", err)
 	}
 
 	// Convert 4CC to string for easier comparison
@@ -154,5 +154,8 @@ func UnmarshalBinary(data []byte) (*Header, any, error) {
 	}
 
 	err := binary.Read(buf, binary.LittleEndian, packet)
+	if err != nil {
+		return nil, nil, fmt.Errorf("error when reading %T telemetry packet: %w", packet, err)
+	}
 	return header, packet, err
 }
