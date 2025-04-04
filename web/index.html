@@ -1,0 +1,86 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WRC Laptimer</title>
+    <link rel="stylesheet" href="styles.css" />
+
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+  </head>
+  <body>
+    <aside>
+      <div>
+        <h1>Laptimes</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Name</th>
+              <th>Time</th>
+              <th>Diff</th>
+            </tr>
+          </thead>
+          <tbody x-data>
+            <template
+              x-for="laptime in $store.laptimer.laptimes"
+              :key="laptime.position"
+            >
+              <tr>
+                <td x-text="laptime.position"></td>
+                <td x-text="laptime.name"></td>
+                <td x-text="laptime.time"></td>
+                <td x-text="laptime.diff"></td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </div>
+      <div x-data>
+        <h1>Event information</h1>
+        <p x-text="'Event: ' + $store.event.name"></p>
+        <p x-text="'Class: ' + $store.event.class"></p>
+        <p x-text="'Car: ' + $store.event.car"></p>
+        <p x-text="'Stage: ' + $store.event.stage"></p>
+        <p x-text="'Location: ' + $store.event.location"></p>
+      </div>
+    </aside>
+
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.store("laptimer", {
+          laptimes: [
+            {
+              position: 1,
+              name: "Andy Rockhill",
+              time: "1:23.456",
+              diff: "0.000",
+            },
+            {
+              position: 2,
+              name: "Mark Firehill",
+              time: "1:24.567",
+              diff: "+1.111",
+            },
+            {
+              position: 3,
+              name: "Axel Crash",
+              time: "DNF",
+              diff: "-",
+            },
+          ],
+        });
+
+        Alpine.store("event", {
+          name: "Kat-Metal Asfaltti JM",
+          class: "Jokamiehenluokka",
+          car: "Volkswagen Beetle",
+          stage: "Stage 1",
+          location: "Skutsi",
+        });
+      });
+    </script>
+  </body>
+</html>
