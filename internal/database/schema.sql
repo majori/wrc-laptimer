@@ -720,3 +720,19 @@ COMMENT ON COLUMN telemetry.vehicle_up_direction_z IS 'Car up unit vector Z comp
 COMMENT ON COLUMN telemetry.vehicle_velocity_x IS 'Car velocity X component, positive left. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_velocity_y IS 'Car velocity Y component, positive up. [metre per second]';
 COMMENT ON COLUMN telemetry.vehicle_velocity_z IS 'Car velocity Z component, positive forward. [metre per second]';
+
+CREATE TABLE IF NOT EXISTS route_points (
+  id UINTEGER PRIMARY KEY,
+  route_id USMALLINT,
+  stage_distance UINTEGER,
+  x FLOAT,
+  y FLOAT,
+  z FLOAT,
+  avg_velocity FLOAT,
+  avg_acceleration FLOAT,
+  avg_throttle FLOAT,
+  avg_rpm FLOAT,
+  avg_breaking FLOAT,
+  avg_handbreak FLOAT,
+  avg_gear FLOAT
+);
