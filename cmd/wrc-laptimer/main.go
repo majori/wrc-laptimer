@@ -2,11 +2,10 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
-
-	"log"
 	"time"
 
 	env "github.com/caarlos0/env/v6"
@@ -25,10 +24,15 @@ var (
 )
 
 func init() {
-	log.SetFlags(log.Lmicroseconds | log.Lshortfile)
+	logger := slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}))
+	slog.SetDefault(logger)
+
 	config = Config{}
 	if err := env.Parse(&config); err != nil {
-		log.Fatal(err)
+		slog.Error("Failed to parse config", "error", err)
+		os.Exit(1)
 	}
 }
 
@@ -41,13 +45,14 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		log.Println("Received shutdown signal, canceling context...")
+		slog.Info("Received shutdown signal, canceling context...")
 		cancel()
 	}()
 
 	db, err := database.NewDatabase(ctx, "wrc.db?access_mode=READ_WRITE")
 	if err != nil {
-		log.Fatalf("could not open database: %s", err.Error())
+		slog.Error("Could not open database", "error", err)
+		os.Exit(1)
 	}
 	defer db.Close()
 
@@ -55,7 +60,7 @@ func main() {
 	go func() {
 		for {
 			if err := telemetry.StartUDPReceiver(ctx, config.ListenUDP, packetCh); err != nil {
-				log.Print(err)
+				slog.Error("UDP receiver error", "error", err)
 
 				// Retry receiving UDP packets after 5 seconds
 				time.Sleep(5 * time.Second)
@@ -70,11 +75,11 @@ func main() {
 		go func() {
 			err := nfc.ListenForCardEvents(ctx, cardEvents)
 			if err != nil {
-				log.Printf("could not start NFC reader: %s", err.Error())
+				slog.Error("Could not start NFC reader", "error", err)
 			}
 		}()
 	} else {
-		log.Println("NFC reader disabled")
+		slog.Info("NFC reader disabled")
 	}
 
 	go db.ListenForUserLogins(cardEvents)
@@ -84,47 +89,46 @@ func main() {
 		case pkt := <-packetCh:
 			switch pkt := pkt.(type) {
 			case *telemetry.TelemetrySessionStart:
-				log.Println("Session Start")
+				slog.Info("Session Start")
 				err := db.FlushTelemetry()
 				if err != nil {
-					log.Printf("could not save telemetry: %s", err.Error())
+					slog.Error("Could not save telemetry", "error", err)
 				}
 
 				err = db.StartSession(pkt)
 				if err != nil {
-					log.Printf("could not save session: %s", err.Error())
+					slog.Error("Could not save session", "error", err)
 				}
-				log.Println("Session saved")
+				slog.Info("Session saved")
 
 			case *telemetry.TelemetrySessionUpdate:
-				// log.Println("Session Update")
 				err := db.AppendTelemetry(pkt)
 				if err != nil {
-					log.Printf("could not create new appender for telemetry: %s", err.Error())
+					slog.Error("Could not create new appender for telemetry", "error", err)
 				}
 
 			case *telemetry.TelemetrySessionEnd:
-				log.Println("Session End")
+				slog.Info("Session End")
 				err := db.FlushTelemetry()
 				if err != nil {
-					log.Printf("could not save telemetry: %s", err.Error())
+					slog.Error("Could not save telemetry", "error", err)
 				}
 
 				err = db.EndSession(pkt)
 				if err != nil {
-					log.Printf("could not finalize session: %s", err.Error())
+					slog.Error("Could not finalize session", "error", err)
 				}
-				log.Println("Session finalized")
+				slog.Info("Session finalized")
 
 			case *telemetry.TelemetrySessionPause:
 				continue
 			case *telemetry.TelemetrySessionResume:
 				continue
 			default:
-				log.Printf("Unknown packet type: %T", pkt)
+				slog.Warn("Unknown packet type", "type", pkt)
 			}
 		case <-ctx.Done():
-			log.Println("Exiting...")
+			slog.Info("Exiting...")
 			return
 		}
 	}
