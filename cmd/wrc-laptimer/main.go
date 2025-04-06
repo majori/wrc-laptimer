@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"log"
 	"time"
@@ -32,6 +35,15 @@ func init() {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
+
+	// Setup signal handling
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	go func() {
+		<-sigChan
+		log.Println("Received shutdown signal, canceling context...")
+		cancel()
+	}()
 
 	db, err := database.NewDatabase(ctx, "wrc.db?access_mode=READ_WRITE")
 	if err != nil {
@@ -67,47 +79,53 @@ func main() {
 
 	go db.ListenForUserLogins(cardEvents)
 
-	for pkt := range packetCh {
-		switch pkt := pkt.(type) {
-		case *telemetry.TelemetrySessionStart:
-			log.Println("Session Start")
-			err = db.FlushTelemetry()
-			if err != nil {
-				log.Printf("could not save telemetry: %s", err.Error())
-			}
+	for {
+		select {
+		case pkt := <-packetCh:
+			switch pkt := pkt.(type) {
+			case *telemetry.TelemetrySessionStart:
+				log.Println("Session Start")
+				err := db.FlushTelemetry()
+				if err != nil {
+					log.Printf("could not save telemetry: %s", err.Error())
+				}
 
-			err := db.StartSession(pkt)
-			if err != nil {
-				log.Printf("could not save session: %s", err.Error())
-			}
-			log.Println("Session saved")
+				err = db.StartSession(pkt)
+				if err != nil {
+					log.Printf("could not save session: %s", err.Error())
+				}
+				log.Println("Session saved")
 
-		case *telemetry.TelemetrySessionUpdate:
-			// log.Println("Session Update")
-			err = db.AppendTelemetry(pkt)
-			if err != nil {
-				log.Printf("could not create new appender for telemetry: %s", err.Error())
-			}
+			case *telemetry.TelemetrySessionUpdate:
+				// log.Println("Session Update")
+				err := db.AppendTelemetry(pkt)
+				if err != nil {
+					log.Printf("could not create new appender for telemetry: %s", err.Error())
+				}
 
-		case *telemetry.TelemetrySessionEnd:
-			log.Println("Session End")
-			err = db.FlushTelemetry()
-			if err != nil {
-				log.Printf("could not save telemetry: %s", err.Error())
-			}
+			case *telemetry.TelemetrySessionEnd:
+				log.Println("Session End")
+				err := db.FlushTelemetry()
+				if err != nil {
+					log.Printf("could not save telemetry: %s", err.Error())
+				}
 
-			err := db.EndSession(pkt)
-			if err != nil {
-				log.Printf("could not finalize session: %s", err.Error())
-			}
-			log.Println("Session finalized")
+				err = db.EndSession(pkt)
+				if err != nil {
+					log.Printf("could not finalize session: %s", err.Error())
+				}
+				log.Println("Session finalized")
 
-		case *telemetry.TelemetrySessionPause:
-			continue
-		case *telemetry.TelemetrySessionResume:
-			continue
-		default:
-			log.Printf("Unknown packet type: %T", pkt)
+			case *telemetry.TelemetrySessionPause:
+				continue
+			case *telemetry.TelemetrySessionResume:
+				continue
+			default:
+				log.Printf("Unknown packet type: %T", pkt)
+			}
+		case <-ctx.Done():
+			log.Println("Exiting...")
+			return
 		}
 	}
 }

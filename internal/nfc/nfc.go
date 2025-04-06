@@ -14,6 +14,8 @@ func ListenForCardEvents(ctx context.Context, events chan<- string) error {
 	if err != nil {
 		return err
 	}
+	//nolint:errcheck
+	defer readerCtx.Release()
 
 	log.Println("ready for smartcard events")
 	return readerCtx.ServeFunc(func(c acr122u.Card) {
