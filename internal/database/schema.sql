@@ -513,7 +513,7 @@ CREATE TABLE IF NOT EXISTS user_logins (
 CREATE SEQUENCE IF NOT EXISTS session_id_sequence START 1;
 
 CREATE TABLE IF NOT EXISTS sessions (
-  id                        UINTEGER PRIMARY KEY DEFAULT nextval('session_id_sequence'),
+  id                        INTEGER PRIMARY KEY DEFAULT nextval('session_id_sequence'),
   started_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   user_id                   TEXT REFERENCES users(id),
   game_mode                 USMALLINT,
@@ -543,7 +543,7 @@ COMMENT ON COLUMN sessions.vehicle_manufacturer_id IS 'Vehicle manufacturer uniq
 
 
 CREATE TABLE IF NOT EXISTS telemetry (
-  timestamp                    TIMESTAMP,
+  session_id                   INTEGER REFERENCES sessions(id),
   stage_current_distance       DOUBLE,
   stage_current_time           FLOAT,
   stage_previous_split_time    FLOAT,

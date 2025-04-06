@@ -76,7 +76,7 @@ func main() {
 				log.Printf("could not save telemetry: %s", err.Error())
 			}
 
-			err := db.SaveSession(pkt)
+			err := db.StartSession(pkt)
 			if err != nil {
 				log.Printf("could not save session: %s", err.Error())
 			}
@@ -96,7 +96,7 @@ func main() {
 				log.Printf("could not save telemetry: %s", err.Error())
 			}
 
-			err := db.FinalizeSession(pkt)
+			err := db.EndSession(pkt)
 			if err != nil {
 				log.Printf("could not finalize session: %s", err.Error())
 			}

@@ -1,14 +1,12 @@
 package database
 
 import (
-	"time"
-
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
 )
 
 func (d *Database) AppendTelemetry(t *telemetry.TelemetrySessionUpdate) error {
 	return d.appender.AppendRow(
-		time.Now(),
+		activeSessionID,
 		t.StageCurrentDistance,
 		t.StageCurrentTime,
 		t.StagePreviousSplitTime,
