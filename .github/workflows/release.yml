@@ -48,6 +48,15 @@ jobs:
         with:
           go-version: "1.24"
 
+      - uses: arduino/setup-task@v2
+        with:
+          version: 3.x
+          repo-token: ${{ secrets.GITHUB_TOKEN }} # https://github.com/arduino/setup-task#repo-token
+
+      - name: Build web assets
+        run: |
+          task web:build
+
       - uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser

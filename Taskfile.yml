@@ -1,5 +1,8 @@
 version: "3"
-
+includes:
+  web:
+    taskfile: ./web/Taskfile.yml
+    dir: ./web
 env:
   DISABLE_NFC: true
 
@@ -10,6 +13,7 @@ tasks:
       - task --list
 
   build:
+    deps: [web:build]
     desc: Build the application
     cmds:
       - go build -o bin/wrc-laptimer cmd/wrc-laptimer/main.go

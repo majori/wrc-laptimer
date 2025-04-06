@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log/slog"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,10 +13,12 @@ import (
 	"github.com/majori/wrc-laptimer/internal/database"
 	"github.com/majori/wrc-laptimer/internal/nfc"
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
+	"github.com/majori/wrc-laptimer/web"
 )
 
 type Config struct {
 	ListenUDP  string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
+	ListenHTTP string `env:"LISTEN_HTTP" envDefault:":8080"`
 	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 
@@ -83,6 +86,15 @@ func main() {
 	}
 
 	go db.ListenForUserLogins(cardEvents)
+
+	// Setup HTTP server
+	go func() {
+		handler := http.FileServer(http.FS(web.GetWebFS()))
+		slog.Info("Starting HTTP server", "address", config.ListenHTTP)
+		if err := http.ListenAndServe(config.ListenHTTP, handler); err != nil {
+			slog.Error("HTTP server error", "error", err)
+		}
+	}()
 
 	for {
 		select {
