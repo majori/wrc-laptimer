@@ -3,19 +3,19 @@ package database
 import "fmt"
 
 type RoutePoint struct {
-	id              int
-	routeID         int
-	stageDistance   int
-	x               float64
-	y               float64
-	z               float64
-	avgVelocity     float64
-	avgAcceleration float64
-	avgThrottle     float64
-	avgRpm          float64
-	avgBreaking     float64
-	avgHandbreak    float64
-	avgGear         float64
+	ID              int
+	RouteID         int
+	StageDistance   int
+	X               float32
+	Y               float32
+	Z               float32
+	AvgVelocity     float32
+	AvgAcceleration float32
+	AvgThrottle     float32
+	AvgRpm          float32
+	AvgBreaking     float32
+	AvgHandbreak    float32
+	AvgGear         float32
 }
 
 func (d *Database) GetRoutePoints(routeID int) ([]*RoutePoint, error) {
@@ -54,10 +54,10 @@ func (d *Database) GetRoutePoints(routeID int) ([]*RoutePoint, error) {
 	for rows.Next() {
 		rp := new(RoutePoint)
 		err := rows.Scan(
-			&rp.id, &rp.routeID, &rp.stageDistance,
-			&rp.x, &rp.y, &rp.z,
-			&rp.avgVelocity, &rp.avgAcceleration, &rp.avgThrottle,
-			&rp.avgRpm, &rp.avgBreaking, &rp.avgHandbreak, &rp.avgGear,
+			&rp.ID, &rp.RouteID, &rp.StageDistance,
+			&rp.X, &rp.Y, &rp.Z,
+			&rp.AvgVelocity, &rp.AvgAcceleration, &rp.AvgThrottle,
+			&rp.AvgRpm, &rp.AvgBreaking, &rp.AvgHandbreak, &rp.AvgGear,
 		)
 
 		if err != nil {
@@ -101,10 +101,10 @@ func (d *Database) UpdateRoutePoints(routeID int, routePoints []*RoutePoint) err
 	for _, rp := range routePoints {
 		_, err := stmt.ExecContext(
 			d.ctx,
-			rp.x, rp.y, rp.z,
-			rp.avgVelocity, rp.avgAcceleration, rp.avgThrottle,
-			rp.avgRpm, rp.avgBreaking, rp.avgHandbreak, rp.avgGear,
-			rp.routeID, rp.stageDistance,
+			&rp.X, &rp.Y, &rp.Z,
+			&rp.AvgVelocity, &rp.AvgAcceleration, &rp.AvgThrottle,
+			&rp.AvgRpm, &rp.AvgBreaking, &rp.AvgHandbreak, &rp.AvgGear,
+			rp.RouteID, rp.StageDistance,
 		)
 		if err != nil {
 			return fmt.Errorf("could not update a route point: %w", err)
@@ -156,10 +156,10 @@ func (d *Database) ReplaceRoutePoints(routeID int, routePoints []*RoutePoint) er
 	for _, rp := range routePoints {
 		_, err := stmt.ExecContext(
 			d.ctx,
-			rp.routeID, rp.stageDistance,
-			rp.x, rp.y, rp.z,
-			rp.avgVelocity, rp.avgAcceleration, rp.avgThrottle,
-			rp.avgRpm, rp.avgBreaking, rp.avgHandbreak, rp.avgGear,
+			&rp.RouteID, &rp.StageDistance,
+			&rp.X, &rp.Y, &rp.Z,
+			&rp.AvgVelocity, &rp.AvgAcceleration, &rp.AvgThrottle,
+			&rp.AvgRpm, &rp.AvgBreaking, &rp.AvgHandbreak, &rp.AvgGear,
 		)
 		if err != nil {
 			return fmt.Errorf("could not create a route point: %w", err)
