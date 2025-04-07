@@ -12,6 +12,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    hooks:
+      pre: task web:build
 
 archives:
   - id: wrc-laptimer

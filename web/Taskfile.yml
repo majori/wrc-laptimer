@@ -8,4 +8,5 @@ tasks:
 
   build:
     cmds:
+      - mkdir -p build
       - cp index.html styles.css build/
