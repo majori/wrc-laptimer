@@ -5,9 +5,11 @@ import (
 )
 
 func (d *Database) AppendTelemetry(t *telemetry.TelemetrySessionUpdate) error {
+	// Appender does not support sql.Null* types, so we need to convert them to their zero values
+	// https://github.com/marcboeker/go-duckdb/issues/89
 	var sessionID any
-	if activeSessionID.Valid {
-		sessionID = activeSessionID.Int32
+	if activeSessionID != 0 {
+		sessionID = activeSessionID
 	} else {
 		sessionID = nil
 	}

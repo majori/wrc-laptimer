@@ -1,16 +1,15 @@
 package database
 
 import (
-	"database/sql"
 	"fmt"
 
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
 )
 
-var activeSessionID sql.NullInt32
+var activeSessionID int
 
 func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
-	result, err := d.db.ExecContext(d.ctx, `
+	session := d.db.QueryRowContext(d.ctx, `
 		INSERT INTO sessions (
 			game_mode,
 			location_id,
@@ -21,20 +20,17 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 			vehicle_id,
 			vehicle_manufacturer_id
 		)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+		RETURNING id;
 	`, pkt.GameMode, pkt.LocationID, pkt.RouteID, pkt.StageLength, pkt.StageShakedown, pkt.VehicleClassID, pkt.VehicleID, pkt.VehicleManufacturerID)
+
+	var sessionID int
+	err := session.Scan(&sessionID)
 	if err != nil {
 		return fmt.Errorf("could not save session: %w", err)
 	}
 
-	id, err := result.LastInsertId()
-	if err != nil {
-		return fmt.Errorf("could not get session ID: %w", err)
-	}
-	activeSessionID = sql.NullInt32{
-		Int32: int32(id),
-		Valid: true,
-	}
+	activeSessionID = sessionID
 
 	return nil
 }
@@ -60,7 +56,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 	}
 
 	// Reset active session
-	activeSessionID = sql.NullInt32{}
+	activeSessionID = 0
 
 	return nil
 }
