@@ -5,8 +5,15 @@ import (
 )
 
 func (d *Database) AppendTelemetry(t *telemetry.TelemetrySessionUpdate) error {
+	var sessionID any
+	if activeSessionID.Valid {
+		sessionID = activeSessionID.Int32
+	} else {
+		sessionID = nil
+	}
+
 	return d.appender.AppendRow(
-		activeSessionID,
+		sessionID,
 		t.StageCurrentDistance,
 		t.StageCurrentTime,
 		t.StagePreviousSplitTime,
