@@ -6,6 +6,14 @@ import (
 
 var activeSessionID int
 
+func (d *Database) GetActiveSessionID() int {
+	return activeSessionID
+}
+
+func (d *Database) setActiveSessionID(id int) {
+	activeSessionID = id
+}
+
 func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 	session := d.db.QueryRowContext(d.ctx, `
 		INSERT INTO sessions (
@@ -28,7 +36,7 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 		return err
 	}
 
-	activeSessionID = sessionID
+	d.setActiveSessionID(sessionID)
 
 	return nil
 }
@@ -55,7 +63,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 	}
 
 	// Reset active session
-	activeSessionID = 0
+	d.setActiveSessionID(0)
 
 	return nil
 }

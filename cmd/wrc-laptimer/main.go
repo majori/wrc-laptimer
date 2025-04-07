@@ -18,7 +18,7 @@ import (
 
 type Config struct {
 	ListenUDP  string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
-	ListenHTTP string `env:"LISTEN_HTTP" envDefault:":8080"`
+	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"0.0.0.0:8080"`
 	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 

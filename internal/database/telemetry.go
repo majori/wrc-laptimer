@@ -6,12 +6,13 @@ import (
 
 func (d *Database) AppendTelemetry(t *telemetry.TelemetrySessionUpdate) error {
 	// Ignore telemetry if no active session
-	if activeSessionID == 0 {
+	sessionID := d.GetActiveSessionID()
+	if sessionID == 0 {
 		return nil
 	}
 
 	return d.appender.AppendRow(
-		activeSessionID,
+		sessionID,
 		t.StageCurrentDistance,
 		t.StageCurrentTime,
 		t.StagePreviousSplitTime,
