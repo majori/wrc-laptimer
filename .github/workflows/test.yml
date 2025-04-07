@@ -15,7 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install pcsc-lite on Ubuntu
+      - name: Install pcsc-lite on Linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
