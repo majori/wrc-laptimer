@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
@@ -18,7 +18,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 			);
 		`, id).Scan(&exists)
 		if err != nil {
-			log.Println("Error checking user existence:", err)
+			slog.Error("error checking user existence", "error", err)
 			continue
 		}
 		if exists {
@@ -27,10 +27,10 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 			// Create the user
 			err = d.CreateUser(id)
 			if err != nil {
-				log.Println("Error creating user:", err)
+				slog.Error("error creating user", "error", err)
 				continue
 			}
-
+			slog.Info("user created", "id", id)
 		}
 
 		// Insert the user login into the database
@@ -39,8 +39,10 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 				VALUES (?);
 			`, id)
 		if err != nil {
-			log.Println("Error inserting user login:", err)
+			slog.Error("error inserting user login", "error", err)
 		}
+
+		slog.Info("user logged in", "id", id)
 	}
 }
 

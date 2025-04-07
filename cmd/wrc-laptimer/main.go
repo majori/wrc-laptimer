@@ -34,7 +34,7 @@ func init() {
 
 	config = Config{}
 	if err := env.Parse(&config); err != nil {
-		slog.Error("Failed to parse config", "error", err)
+		slog.Error("failed to parse config", "error", err)
 		os.Exit(1)
 	}
 }
@@ -48,13 +48,13 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
 		<-sigChan
-		slog.Info("Received shutdown signal, canceling context...")
+		slog.Debug("received shutdown signal, canceling context")
 		cancel()
 	}()
 
 	db, err := database.NewDatabase(ctx, "wrc.db?access_mode=READ_WRITE")
 	if err != nil {
-		slog.Error("Could not open database", "error", err)
+		slog.Error("could not open database", "error", err)
 		os.Exit(1)
 	}
 	defer db.Close()
@@ -78,7 +78,7 @@ func main() {
 		go func() {
 			err := nfc.ListenForCardEvents(ctx, cardEvents)
 			if err != nil {
-				slog.Error("Could not start NFC reader", "error", err)
+				slog.Error("could not start NFC reader", "error", err)
 			}
 		}()
 	} else {
@@ -90,7 +90,7 @@ func main() {
 	// Setup HTTP server
 	go func() {
 		handler := http.FileServer(http.FS(web.GetWebFS()))
-		slog.Info("Starting HTTP server", "address", config.ListenHTTP)
+		slog.Info("starting HTTP server", "address", config.ListenHTTP)
 		if err := http.ListenAndServe(config.ListenHTTP, handler); err != nil {
 			slog.Error("HTTP server error", "error", err)
 		}
@@ -103,42 +103,42 @@ func main() {
 			case *telemetry.TelemetrySessionStart:
 				err := db.FlushTelemetry()
 				if err != nil {
-					slog.Error("Could not save telemetry", "error", err)
+					slog.Error("could not save telemetry", "error", err)
 				}
 
 				err = db.StartSession(pkt)
 				if err != nil {
-					slog.Error("Could not save session", "error", err)
+					slog.Error("could not save session", "error", err)
 				}
-				slog.Info("Session started")
+				slog.Info("session started")
 
 			case *telemetry.TelemetrySessionUpdate:
 				err := db.AppendTelemetry(pkt)
 				if err != nil {
-					slog.Error("Could not create new appender for telemetry", "error", err)
+					slog.Error("could not create new appender for telemetry", "error", err)
 				}
 
 			case *telemetry.TelemetrySessionEnd:
 				err := db.FlushTelemetry()
 				if err != nil {
-					slog.Error("Could not save telemetry", "error", err)
+					slog.Error("could not save telemetry", "error", err)
 				}
 
 				err = db.EndSession(pkt)
 				if err != nil {
-					slog.Error("Could not end session", "error", err)
+					slog.Error("could not end session", "error", err)
 				}
-				slog.Info("Session ended")
+				slog.Info("session ended")
 
 			case *telemetry.TelemetrySessionPause:
 				continue
 			case *telemetry.TelemetrySessionResume:
 				continue
 			default:
-				slog.Warn("Unknown packet type", "type", pkt)
+				slog.Warn("unknown packet type", "type", pkt)
 			}
 		case <-ctx.Done():
-			slog.Info("Exiting...")
+			slog.Info("exiting...")
 			return
 		}
 	}

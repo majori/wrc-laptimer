@@ -2,7 +2,7 @@ package telemetry
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net"
 )
 
@@ -21,8 +21,7 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 	//nolint:errcheck
 	defer conn.Close()
 
-	log.Println("listen udp:", addr)
-	defer log.Println("udp closed:", addr)
+	slog.Info("listening udp", "address", addr)
 
 	done := make(chan error, 1)
 	go func() {
