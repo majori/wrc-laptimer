@@ -1,8 +1,6 @@
 package database
 
 import (
-	"fmt"
-
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
 )
 
@@ -27,7 +25,7 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 	var sessionID int
 	err := session.Scan(&sessionID)
 	if err != nil {
-		return fmt.Errorf("could not save session: %w", err)
+		return err
 	}
 
 	activeSessionID = sessionID
@@ -36,6 +34,10 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 }
 
 func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
+	if activeSessionID == 0 {
+		return nil
+	}
+
 	userID, err := d.GetActiveUserID()
 	if err != nil {
 		return err
@@ -46,13 +48,10 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 			stage_result_status = ?,
 			stage_result_time = ?,
 			stage_result_time_penalty = ?
-		WHERE id = (
-			SELECT MAX(id)
-			FROM sessions
-		);
-	`, userID, pkt.StageResultStatus, pkt.StageResultTime, pkt.StageResultTimePenalty)
+		WHERE id = ?;
+	`, userID, pkt.StageResultStatus, pkt.StageResultTime, pkt.StageResultTimePenalty, activeSessionID)
 	if err != nil {
-		return fmt.Errorf("could not finalize session: %w", err)
+		return err
 	}
 
 	// Reset active session

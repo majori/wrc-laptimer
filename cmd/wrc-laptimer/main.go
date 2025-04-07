@@ -101,7 +101,6 @@ func main() {
 		case pkt := <-packetCh:
 			switch pkt := pkt.(type) {
 			case *telemetry.TelemetrySessionStart:
-				slog.Info("Session Start")
 				err := db.FlushTelemetry()
 				if err != nil {
 					slog.Error("Could not save telemetry", "error", err)
@@ -111,7 +110,7 @@ func main() {
 				if err != nil {
 					slog.Error("Could not save session", "error", err)
 				}
-				slog.Info("Session saved")
+				slog.Info("Session started")
 
 			case *telemetry.TelemetrySessionUpdate:
 				err := db.AppendTelemetry(pkt)
@@ -120,7 +119,6 @@ func main() {
 				}
 
 			case *telemetry.TelemetrySessionEnd:
-				slog.Info("Session End")
 				err := db.FlushTelemetry()
 				if err != nil {
 					slog.Error("Could not save telemetry", "error", err)
@@ -128,9 +126,9 @@ func main() {
 
 				err = db.EndSession(pkt)
 				if err != nil {
-					slog.Error("Could not finalize session", "error", err)
+					slog.Error("Could not end session", "error", err)
 				}
-				slog.Info("Session finalized")
+				slog.Info("Session ended")
 
 			case *telemetry.TelemetrySessionPause:
 				continue
