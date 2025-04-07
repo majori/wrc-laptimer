@@ -543,7 +543,7 @@ COMMENT ON COLUMN sessions.vehicle_manufacturer_id IS 'Vehicle manufacturer uniq
 
 
 CREATE TABLE IF NOT EXISTS telemetry (
-  session_id                   INTEGER REFERENCES sessions(id),
+  session_id                   INTEGER,
   stage_current_distance       DOUBLE,
   stage_current_time           FLOAT,
   stage_previous_split_time    FLOAT,
