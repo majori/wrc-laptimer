@@ -104,7 +104,12 @@ func ProcessTelemetryForRouteData(sample *telemetry.TelemetrySessionUpdate) {
 	addRoutePoint(nextStageDistance, previousTelemetry, sample)
 }
 
-func UpdateRoutePoints(db *database.Database, routeID int, placement int) error {
+type RoutePointDb interface {
+	GetRoutePoints(routeID int) ([]*database.RoutePoint, error)
+	SetRoutePoints(routeID int, routePoints []*database.RoutePoint) error
+}
+
+func UpdateRoutePoints(db RoutePointDb, routeID int, placement int) error {
 	if previousTelemetry == nil {
 		return nil
 	}
