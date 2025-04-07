@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"database/sql/driver"
 	_ "embed"
 	"fmt"
 
@@ -11,6 +12,7 @@ import (
 
 type Database struct {
 	ctx      context.Context
+	conn     driver.Conn
 	db       *sql.DB
 	appender *duckdb.Appender
 }
@@ -43,6 +45,7 @@ func NewDatabase(ctx context.Context, path string) (*Database, error) {
 
 	return &Database{
 		ctx:      ctx,
+		conn:     dbConnection,
 		db:       db,
 		appender: appender,
 	}, nil
@@ -56,5 +59,9 @@ func (d *Database) Close() {
 	if d.db != nil {
 		//nolint:errcheck
 		d.db.Close()
+	}
+	if d.conn != nil {
+		//nolint:errcheck
+		d.conn.Close()
 	}
 }
