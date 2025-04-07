@@ -2,9 +2,7 @@ version: 2
 
 builds:
   - id: wrc-laptimer
-    dir: main.go
-    env:
-      - CGO_ENABLED=0
+    dir: cmd/wrc-laptimer
     goos:
       - linux
       - windows
@@ -12,6 +10,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    # hooks:
+    #   pre: task web:build
 
 archives:
   - id: wrc-laptimer
