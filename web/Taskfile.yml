@@ -8,4 +8,4 @@ tasks:
 
   build:
     cmds:
-      - cp index.html styles.css build/
+      - echo "No build needed at the moment"
