@@ -21,9 +21,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 			slog.Error("error checking user existence", "error", err)
 			continue
 		}
-		if exists {
-			continue
-		} else {
+		if !exists {
 			// Create the user
 			err = d.CreateUser(id)
 			if err != nil {
