@@ -1,5 +1,6 @@
+/* General Styles */
 body {
-  font-family: Ubuntu, sans-serif;
+  font-family: "Ubuntu", sans-serif;
   color: white;
   margin: 0;
   padding: 0;
@@ -13,39 +14,30 @@ body {
   background: url("bg.jpg");
   filter: blur(8px);
   -webkit-filter: blur(8px);
-  filter: blur(8px);
   opacity: 0.5;
-
   height: 100%;
   width: 100%;
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
-
   position: absolute;
   z-index: -10;
 }
 
+/* Layout Styles */
 aside {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
 }
 
-th {
-  padding: 8px;
-}
-
-td {
-  padding: 8px;
-}
-
 .main {
   width: 90%;
 }
 
+/* Current Driver Section */
 .current-driver {
-  margin-top: 25px;
+  margin-top: 45px;
   background: #fc4c02;
   color: black;
   padding: 12px 20px;
@@ -55,7 +47,6 @@ td {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
   letter-spacing: 1px;
   margin-bottom: 35px;
 }
@@ -72,6 +63,7 @@ td {
   font-weight: bold;
 }
 
+/* Event Info Section */
 .event-info {
   font-size: 26px;
   font-weight: bold;
@@ -84,47 +76,14 @@ td {
   );
   color: #f5f5f7;
   padding: 20px;
-  margin-top: 20px auto;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  margin-top: 20px;
 }
 
 .stage-date {
   padding-right: 35px;
 }
 
-.leaderboard-title {
-  font-size: 24px;
-  text-align: center;
-  margin-bottom: 15px;
-  color: #fc4c02;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-
-.stage-location {
-  font-size: 20px;
-  font-weight: bold;
-  margin-bottom: 8px;
-  text-align: center;
-}
-
-.location {
-  font-weight: normal;
-  color: #aaa;
-}
-
-.car-class {
-  padding-left: 20px;
-  font-size: 26px;
-  font-weight: normal;
-  text-align: center;
-  color: #bbb;
-}
-
-.car-car {
-  font-weight: 300;
-}
-
+/* Leaderboard Table */
 .leaderboard {
   width: 100%;
   border-collapse: separate;
@@ -152,7 +111,9 @@ td {
 }
 
 .leaderboard tbody tr.highlight {
-  background-color: #ffffff !important;
+  background-color: #ffffff;
+  color: #000000;
+  font-weight: bold;
 }
 
 .leaderboard th {
@@ -170,6 +131,47 @@ td {
 .leaderboard td:last-child {
   padding-right: 15px;
   width: 100px;
+}
+
+th {
+  padding: 8px;
+}
+
+td {
+  padding: 8px;
+}
+
+.stage-location {
+  font-size: 20px;
+  font-weight: bold;
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.location {
+  font-weight: normal;
+  color: #aaa;
+}
+
+.car-class {
+  padding-left: 20px;
+  font-size: 26px;
+  font-weight: normal;
+  text-align: center;
+  color: #bbb;
+}
+
+.car-car {
+  font-weight: 300;
+}
+
+.leaderboard-title {
+  font-size: 24px;
+  text-align: center;
+  margin-bottom: 15px;
+  color: #fc4c02;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
 .highlight {
