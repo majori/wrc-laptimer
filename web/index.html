@@ -4,6 +4,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WRC Laptimer</title>
     <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Source+Code+Pro:ital,wght@0,200..900;1,200..900&family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
 
     <script
       defer
@@ -12,39 +18,57 @@
   </head>
   <body>
     <aside>
-      <div>
-        <h1>Laptimes</h1>
-        <table>
+      <div class="bg-image"></div>
+      <div class="main">
+        <header class="current-driver">
+          <span class="label">Current Driver:</span>
+          <span
+            x-data
+            x-text="$store.laptimer.laptimes[0].name"
+            class="driver-name"
+          ></span>
+        </header>
+        <h1>Leaderboard</h1>
+        <div x-data class="event-info">
+          <div class="event-details">
+            <span class="stage-date" x-text="$store.event.date"></span>
+            <span class="stage-info">
+              <span x-text="$store.event.stage"></span> -
+              <span x-text="$store.event.location"></span>
+            </span>
+            <span class="car-class">
+              <span class="car-car" x-text="$store.event.car"></span>
+              (<span x-text="$store.event.class"></span>)
+            </span>
+          </div>
+        </div>
+        <table class="leaderboard">
           <thead>
             <tr>
-              <th>Position</th>
-              <th>Name</th>
+              <th>POS.</th>
+              <th>Driver</th>
+              <th>Tries</th>
               <th>Time</th>
               <th>Diff</th>
             </tr>
           </thead>
           <tbody x-data>
             <template
-              x-for="laptime in $store.laptimer.laptimes"
+              x-for="(laptime, index) in $store.laptimer.laptimes"
               :key="laptime.position"
             >
-              <tr>
+              <tr
+                :class="index === $store.laptimer.latestDriveIndex ? 'highlight' : ''"
+              >
                 <td x-text="laptime.position"></td>
                 <td x-text="laptime.name"></td>
+                <td x-text="laptime.attempts"></td>
                 <td x-text="laptime.time"></td>
                 <td x-text="laptime.diff"></td>
               </tr>
             </template>
           </tbody>
         </table>
-      </div>
-      <div x-data>
-        <h1>Event information</h1>
-        <p x-text="'Event: ' + $store.event.name"></p>
-        <p x-text="'Class: ' + $store.event.class"></p>
-        <p x-text="'Car: ' + $store.event.car"></p>
-        <p x-text="'Stage: ' + $store.event.stage"></p>
-        <p x-text="'Location: ' + $store.event.location"></p>
       </div>
     </aside>
 
@@ -55,31 +79,95 @@
             {
               position: 1,
               name: "Andy Rockhill",
-              time: "1:23.456",
-              diff: "0.000",
+              time: formatTime("1:23.456"),
+              diff: formatDiff("0.000"),
+              attempts: Math.floor(Math.random() * 10) + 1,
             },
             {
               position: 2,
               name: "Mark Firehill",
-              time: "1:24.567",
-              diff: "+1.111",
+              time: formatTime("1:24.567"),
+              diff: formatDiff("+1.111"),
+              attempts: Math.floor(Math.random() * 10) + 1,
             },
             {
               position: 3,
+              name: "Isabella Speed",
+              time: formatTime("1:25.678"),
+              diff: formatDiff("+2.222"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 4,
+              name: "Liam Speedster",
+              time: formatTime("1:25.789"),
+              diff: formatDiff("+2.333"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 5,
+              name: "Sophia Drift",
+              time: formatTime("1:26.890"),
+              diff: formatDiff("+3.434"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 6,
+              name: "Ethan Turbo",
+              time: formatTime("1:27.123"),
+              diff: formatDiff("+3.667"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 7,
+              name: "Olivia Racer",
+              time: formatTime("1:28.456"),
+              diff: formatDiff("+5.000"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 8,
+              name: "Noah Nitro",
+              time: formatTime("1:29.789"),
+              diff: formatDiff("+6.333"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 9,
+              name: "Emma Wheels",
+              time: formatTime("1:30.123"),
+              diff: formatDiff("+6.667"),
+              attempts: Math.floor(Math.random() * 10) + 1,
+            },
+            {
+              position: 10,
               name: "Axel Crash",
-              time: "DNF",
-              diff: "-",
+              time: formatTime("DNF"),
+              diff: formatDiff("-"),
+              attempts: Math.floor(Math.random() * 10) + 1,
             },
           ],
+          latestDriveIndex: Math.floor(Math.random() * 7),
         });
 
         Alpine.store("event", {
-          name: "Kat-Metal Asfaltti JM",
-          class: "Jokamiehenluokka",
-          car: "Volkswagen Beetle",
-          stage: "Stage 1",
-          location: "Skutsi",
+          class: "H2 FWD",
+          car: "Volkswagen Polo GTI R5",
+          date: "13.04",
+          stage: "Strokács",
+          location: "Latvia",
         });
+
+        function formatTime(time) {
+          if (time === "DNF") return time;
+          const [minutes, seconds] = time.split(":");
+          const [sec, ms] = seconds.split(".");
+          return `${minutes.padStart(2, "0")}:${sec.padStart(2, "0")}.${ms}`;
+        }
+
+        function formatDiff(diff) {
+          return diff === "0.000" ? "" : diff;
+        }
       });
     </script>
   </body>
