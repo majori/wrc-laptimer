@@ -11,7 +11,7 @@ body {
 }
 
 .bg-image {
-  background: url("bg.jpg");
+  background: url("https://jf.je/ss/bg.jpg");
   filter: blur(8px);
   -webkit-filter: blur(8px);
   opacity: 0.5;

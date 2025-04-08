@@ -65,3 +65,11 @@ func (d *Database) Close() {
 		d.conn.Close()
 	}
 }
+
+func (d *Database) UnsafeQuery(query string) (*sql.Rows, error) {
+	rows, err := d.db.QueryContext(d.ctx, query)
+	if err != nil {
+			return nil, err
+	}
+	return rows, nil
+}

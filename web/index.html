@@ -24,7 +24,7 @@
           <span class="label">Current Driver:</span>
           <span
             x-data
-            x-text="$store.laptimer.laptimes[0].name"
+            x-text="$store.currentDriver.name"
             class="driver-name"
           ></span>
         </header>
@@ -79,64 +79,295 @@
     <script>
       document.addEventListener("alpine:init", () => {
         Alpine.store("laptimer", {
-          laptimes: [
-            {
-              position: 1,
-              name: "Andy Rockhill",
-              time: formatTime("1:23.456"),
-              diff: formatDiff("00:0.000"),
-              attempts: Math.floor(Math.random() * 10) + 1,
-            },
-            {
-              position: 2,
-              name: "Mark Firehill",
-              time: formatTime("1:24.567"),
-              diff: formatDiff("+00:1.111"),
-              attempts: Math.floor(Math.random() * 10) + 1,
-            },
-            {
-              position: 3,
-              name: "Isabella Speed",
-              time: formatTime("1:25.678"),
-              diff: formatDiff("+00:2.222"),
-              attempts: Math.floor(Math.random() * 10) + 1,
-            },
-            {
-              position: 4,
-              name: "Liam Speedster",
-              time: formatTime("1:25.789"),
-              diff: formatDiff("+00:2.333"),
-              attempts: Math.floor(Math.random() * 10) + 1,
-            },
-            {
-              position: 5,
-              name: "Sophia Drift",
-              time: formatTime("1:26.890"),
-              diff: formatDiff("+00:3.434"),
-              attempts: Math.floor(Math.random() * 10) + 1,
-            },
-          ],
-          latestDriveIndex: Math.floor(Math.random() * 5),
+          laptimes: [],
+          latestDriveIndex: -1,
         });
 
         Alpine.store("event", {
-          class: "H2 FWD",
-          car: "Volkswagen Polo GTI R5",
-          date: "13.04",
-          stage: "Strokács",
-          location: "Latvia",
+          class: "",
+          car: "",
+          manufacturer: "",
+          date: "",
+          stage: "",
+          location: "",
         });
 
-        function formatTime(time) {
-          if (time === "DNF") return time;
-          const [minutes, seconds] = time.split(":");
-          const [sec, ms] = seconds.split(".");
-          return `${minutes.padStart(2, "0")}:${sec.padStart(2, "0")}.${ms}`;
+        Alpine.store("currentDriver", {
+          name: "N/A",
+        });
+
+        async function fetchCurrentDriver() {
+          try {
+            const query = `
+              SELECT users.name AS user_name
+              FROM user_logins
+              JOIN users ON user_logins.user_id = users.id
+              ORDER BY user_logins.timestamp DESC
+              LIMIT 1
+            `;
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(query)}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch current driver");
+            }
+
+            const data = await response.json();
+            const currentDriverName = data[0]?.user_name || "N/A";
+
+            // Update the Alpine.js store
+            Alpine.store("currentDriver").name = currentDriverName;
+          } catch (error) {
+            console.error("Error fetching current driver:", error);
+          }
         }
 
-        function formatDiff(diff) {
-          return diff === "00:0.000" ? "" : diff;
+        async function fetchSessionsForDay(date) {
+          try {
+            const startOfDay = `${date} 00:00:00`;
+            const endOfDay = `${date} 23:59:59`;
+
+            const query = `
+              SELECT sessions.user_id, users.name AS user_name, 
+                     sessions.stage_result_time AS time,
+                     sessions.route_id, sessions.location_id, 
+                     sessions.vehicle_id, sessions.vehicle_manufacturer_id, 
+                     sessions.vehicle_class_id
+              FROM sessions 
+              JOIN users ON sessions.user_id = users.id 
+              WHERE sessions.started_at BETWEEN '${startOfDay}' AND '${endOfDay}' 
+              AND sessions.stage_result_status = 1
+            `;
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(query)}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch sessions");
+            }
+
+            const data = await response.json();
+
+            // Group laps by track and car class to find the majority
+            const trackCounts = {};
+            const carClassCounts = {};
+            data.forEach((item) => {
+              trackCounts[item.route_id] =
+                (trackCounts[item.route_id] || 0) + 1;
+              carClassCounts[item.vehicle_class_id] =
+                (carClassCounts[item.vehicle_class_id] || 0) + 1;
+            });
+
+            // Find the majority track and car class
+            const mainTrackId = Object.keys(trackCounts).reduce((a, b) =>
+              trackCounts[a] > trackCounts[b] ? a : b
+            );
+            const mainCarClassId = Object.keys(carClassCounts).reduce((a, b) =>
+              carClassCounts[a] > carClassCounts[b] ? a : b
+            );
+
+            // Filter data to only include laps from the majority track and car class
+            const filteredData = data.filter(
+              (item) =>
+                item.route_id == mainTrackId &&
+                item.vehicle_class_id == mainCarClassId
+            );
+
+            // Fetch event info
+            const routeName = await getRouteName(mainTrackId);
+            const locationName = await getLocationName(
+              filteredData[0]?.location_id
+            );
+            const carName = await getVehicleName(filteredData[0]?.vehicle_id);
+            const manufacturerName = await getManufacturerName(
+              filteredData[0]?.vehicle_manufacturer_id
+            );
+            const className = await getClassName(mainCarClassId);
+
+            // Update the event info
+            Alpine.store("event", {
+              class: className,
+              car: carName,
+              manufacturer: manufacturerName,
+              date: formatDate(date),
+              stage: routeName,
+              location: locationName,
+            });
+
+            // Group laps by user and calculate fastest lap and total attempts
+            const userLaps = {};
+            filteredData.forEach((item) => {
+              const userId = item.user_id;
+              const time = parseFloat(item.time);
+
+              if (!userLaps[userId]) {
+                userLaps[userId] = {
+                  name: item.user_name,
+                  fastestTime: time,
+                  totalAttempts: 1,
+                };
+              } else {
+                userLaps[userId].fastestTime = Math.min(
+                  userLaps[userId].fastestTime,
+                  time
+                );
+                userLaps[userId].totalAttempts += 1;
+              }
+            });
+
+            // Convert grouped data into an array and sort by fastest lap time
+            const laptimes = Object.values(userLaps)
+              .map((user, index) => ({
+                position: 0, // Placeholder for position, will be updated after sorting
+                name: user.name,
+                time: formatTime(user.fastestTime),
+                rawTime: user.fastestTime,
+                diff: "", // Placeholder for diff logic
+                attempts: user.totalAttempts,
+              }))
+              .sort((a, b) => a.rawTime - b.rawTime); // Sort by fastest lap time
+
+            // Update positions and calculate time differences
+            const fastestTime = laptimes[0]?.rawTime || 0;
+            laptimes.forEach((laptime, index) => {
+              laptime.position = index + 1; // Update position based on sorted order
+              laptime.diff =
+                laptime.rawTime > fastestTime
+                  ? `+${formatTime(laptime.rawTime - fastestTime)}`
+                  : ""; // Add "+" to the diff time
+            });
+
+            // Update the Alpine.js store
+            Alpine.store("laptimer").laptimes = laptimes;
+          } catch (error) {
+            console.error("Error fetching sessions:", error);
+          }
         }
+
+        async function getRouteName(routeId) {
+          try {
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(
+                `SELECT name FROM routes WHERE id = ${routeId}`
+              )}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch route name");
+            }
+
+            const data = await response.json();
+            return data[0]?.name || "Unknown Route";
+          } catch (error) {
+            console.error("Error fetching route name:", error);
+            return "Unknown Route";
+          }
+        }
+
+        async function getLocationName(locationId) {
+          try {
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(
+                `SELECT name FROM locations WHERE id = ${locationId}`
+              )}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch location name");
+            }
+
+            const data = await response.json();
+            return data[0]?.name || "Unknown Location";
+          } catch (error) {
+            console.error("Error fetching location name:", error);
+            return "Unknown Location";
+          }
+        }
+
+        async function getVehicleName(vehicleId) {
+          try {
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(
+                `SELECT name FROM vehicles WHERE id = ${vehicleId}`
+              )}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch vehicle name");
+            }
+
+            const data = await response.json();
+            return data[0]?.name || "Unknown Vehicle";
+          } catch (error) {
+            console.error("Error fetching vehicle name:", error);
+            return "Unknown Vehicle";
+          }
+        }
+
+        async function getManufacturerName(manufacturerId) {
+          try {
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(
+                `SELECT name FROM vehicle_manufacturers WHERE id = ${manufacturerId}`
+              )}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch manufacturer name");
+            }
+
+            const data = await response.json();
+            return data[0]?.name || "Unknown Manufacturer";
+          } catch (error) {
+            console.error("Error fetching manufacturer name:", error);
+            return "Unknown Manufacturer";
+          }
+        }
+
+        async function getClassName(classId) {
+          try {
+            const response = await fetch(
+              `/api/query?query=${encodeURIComponent(
+                `SELECT name FROM vehicle_classes WHERE id = ${classId}`
+              )}`
+            );
+
+            if (!response.ok) {
+              throw new Error("Failed to fetch class name");
+            }
+
+            const data = await response.json();
+            return data[0]?.name || "Unknown Class";
+          } catch (error) {
+            console.error("Error fetching class name:", error);
+            return "Unknown Class";
+          }
+        }
+
+        function formatTime(seconds) {
+          const mins = Math.floor(seconds / 60);
+          const secs = Math.floor(seconds % 60);
+          const ms = Math.round((seconds % 1) * 1000);
+          return `${String(mins).padStart(2, "0")}:${String(secs).padStart(
+            2,
+            "0"
+          )}.${String(ms).padStart(3, "0")}`;
+        }
+
+        function formatDate(date) {
+          const [year, month, day] = date.split("-");
+          return `${day}.${month}`;
+        }
+
+        fetchCurrentDriver();
+        const today = new Date().toISOString().split("T")[0];
+        fetchSessionsForDay(today);
+
+        setInterval(() => {
+          fetchCurrentDriver();
+          fetchSessionsForDay(today);
+        }, 5000);
       });
     </script>
   </body>

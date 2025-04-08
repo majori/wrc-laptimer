@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 	"net/http"
 	"os"
@@ -89,9 +90,71 @@ func main() {
 
 	// Setup HTTP server
 	go func() {
-		handler := http.FileServer(http.FS(web.GetWebFS()))
+		http.Handle("/", http.FileServer(http.FS(web.GetWebFS())))
+
+		// Setup HTTP server with /api/query endpoint
+		http.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
+			// Parse the query parameter
+			query := r.URL.Query().Get("query")
+			if query == "" {
+				http.Error(w, "missing query parameter", http.StatusBadRequest)
+				return
+			}
+
+			// Execute the query on the database
+			rows, err := db.UnsafeQuery(query)
+			if err != nil {
+				slog.Error("failed to execute query", "error", err)
+				http.Error(w, "failed to execute query", http.StatusInternalServerError)
+				return
+			}
+			defer rows.Close()
+
+			// Serialize the rows into JSON
+			columns, err := rows.Columns()
+			if err != nil {
+				slog.Error("failed to get columns", "error", err)
+				http.Error(w, "failed to get columns", http.StatusInternalServerError)
+				return
+			}
+
+			results := []map[string]interface{}{}
+			rowCount := 0
+			for rows.Next() {
+				// Create a slice of interface{} to hold column values
+				values := make([]interface{}, len(columns))
+				valuePtrs := make([]interface{}, len(columns))
+				for i := range values {
+					valuePtrs[i] = &values[i]
+				}
+
+				// Scan the row into the value pointers
+				if err := rows.Scan(valuePtrs...); err != nil {
+					slog.Error("failed to scan row", "error", err)
+					http.Error(w, "failed to scan row", http.StatusInternalServerError)
+					return
+				}
+
+				// Create a map for the row
+				row := make(map[string]interface{})
+				for i, col := range columns {
+					row[col] = values[i]
+				}
+				results = append(results, row)
+				rowCount++
+			}
+
+			// Write the JSON response
+			w.Header().Set("Content-Type", "application/json")
+			if err := json.NewEncoder(w).Encode(results); err != nil {
+				slog.Error("failed to encode response", "error", err)
+				http.Error(w, "failed to encode response", http.StatusInternalServerError)
+			}
+		})
+
+		// Start the HTTP server
 		slog.Info("starting HTTP server", "address", config.ListenHTTP)
-		if err := http.ListenAndServe(config.ListenHTTP, handler); err != nil {
+		if err := http.ListenAndServe(config.ListenHTTP, nil); err != nil {
 			slog.Error("HTTP server error", "error", err)
 		}
 	}()
