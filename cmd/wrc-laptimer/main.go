@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -17,8 +18,8 @@ import (
 )
 
 type Config struct {
-	ListenUDP  string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
-	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"0.0.0.0:8080"`
+	ListenUDP  string `env:"LISTEN_UDP" envDefault:"127.0.0.1:20777"`
+	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"127.0.0.1:8080"`
 	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 
@@ -89,9 +90,46 @@ func main() {
 
 	// Setup HTTP server
 	go func() {
-		handler := http.FileServer(http.FS(web.GetWebFS()))
+		mux := http.NewServeMux()
+
+		// Add query endpoint
+		mux.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
+				return
+			}
+
+			reqBody, err := io.ReadAll(r.Body)
+			if err != nil {
+				slog.Error("could not read request body", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			reqBodyString := string(reqBody)
+
+			result, err := db.ExecuteJSONQuery(reqBodyString)
+			if err != nil {
+				slog.Error("could not execute JSON query", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			_, err = w.Write([]byte(result))
+			if err != nil {
+				slog.Error("could not write response", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+		})
+
+		// Serve static files
+		staticHandler := http.FileServer(http.FS(web.GetWebFS()))
+		mux.Handle("/", staticHandler)
+
 		slog.Info("starting HTTP server", "address", config.ListenHTTP)
-		if err := http.ListenAndServe(config.ListenHTTP, handler); err != nil {
+		if err := http.ListenAndServe(config.ListenHTTP, mux); err != nil {
 			slog.Error("HTTP server error", "error", err)
 		}
 	}()
