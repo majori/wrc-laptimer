@@ -13,12 +13,12 @@ type Header struct {
 }
 
 type TelemetrySessionStart struct {
-	VehicleID             uint8
-	VehicleClassID        uint8
-	VehicleManufacturerID uint8
+	VehicleID             uint16
+	VehicleClassID        uint16
+	VehicleManufacturerID uint16
 	GameMode              uint8
-	LocationID            uint8
-	RouteID               uint8
+	LocationID            uint16
+	RouteID               uint16
 	StageLength           float64
 	StageShakedown        bool
 }
