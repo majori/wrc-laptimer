@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"encoding/json"
+	"io"
 	"log/slog"
 	"net/http"
 	"os"
@@ -18,8 +18,8 @@ import (
 )
 
 type Config struct {
-	ListenUDP  string `env:"LISTEN_UDP" envDefault:"0.0.0.0:20777"`
-	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"0.0.0.0:8080"`
+	ListenUDP  string `env:"LISTEN_UDP" envDefault:"127.0.0.1:20777"`
+	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"127.0.0.1:8080"`
 	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 
@@ -90,71 +90,46 @@ func main() {
 
 	// Setup HTTP server
 	go func() {
-		http.Handle("/", http.FileServer(http.FS(web.GetWebFS())))
+		mux := http.NewServeMux()
 
-		// Setup HTTP server with /api/query endpoint
-		http.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
-			// Parse the query parameter
-			query := r.URL.Query().Get("query")
-			if query == "" {
-				http.Error(w, "missing query parameter", http.StatusBadRequest)
+		// Add query endpoint
+		mux.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				return
 			}
 
-			// Execute the query on the database
-			rows, err := db.UnsafeQuery(query)
+			reqBody, err := io.ReadAll(r.Body)
 			if err != nil {
-				slog.Error("failed to execute query", "error", err)
-				http.Error(w, "failed to execute query", http.StatusInternalServerError)
+				slog.Error("could not read request body", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			defer rows.Close()
 
-			// Serialize the rows into JSON
-			columns, err := rows.Columns()
+			reqBodyString := string(reqBody)
+
+			result, err := db.ExecuteJSONQuery(reqBodyString)
 			if err != nil {
-				slog.Error("failed to get columns", "error", err)
-				http.Error(w, "failed to get columns", http.StatusInternalServerError)
+				slog.Error("could not execute JSON query", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
 
-			results := []map[string]interface{}{}
-			rowCount := 0
-			for rows.Next() {
-				// Create a slice of interface{} to hold column values
-				values := make([]interface{}, len(columns))
-				valuePtrs := make([]interface{}, len(columns))
-				for i := range values {
-					valuePtrs[i] = &values[i]
-				}
-
-				// Scan the row into the value pointers
-				if err := rows.Scan(valuePtrs...); err != nil {
-					slog.Error("failed to scan row", "error", err)
-					http.Error(w, "failed to scan row", http.StatusInternalServerError)
-					return
-				}
-
-				// Create a map for the row
-				row := make(map[string]interface{})
-				for i, col := range columns {
-					row[col] = values[i]
-				}
-				results = append(results, row)
-				rowCount++
-			}
-
-			// Write the JSON response
 			w.Header().Set("Content-Type", "application/json")
-			if err := json.NewEncoder(w).Encode(results); err != nil {
-				slog.Error("failed to encode response", "error", err)
-				http.Error(w, "failed to encode response", http.StatusInternalServerError)
+			_, err = w.Write([]byte(result))
+			if err != nil {
+				slog.Error("could not write response", "error", err)
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
 			}
 		})
 
-		// Start the HTTP server
+		// Serve static files
+		staticHandler := http.FileServer(http.FS(web.GetWebFS()))
+		mux.Handle("/", staticHandler)
+
 		slog.Info("starting HTTP server", "address", config.ListenHTTP)
-		if err := http.ListenAndServe(config.ListenHTTP, nil); err != nil {
+		if err := http.ListenAndServe(config.ListenHTTP, mux); err != nil {
 			slog.Error("HTTP server error", "error", err)
 		}
 	}()

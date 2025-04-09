@@ -66,10 +66,14 @@ func (d *Database) Close() {
 	}
 }
 
-func (d *Database) UnsafeQuery(query string) (*sql.Rows, error) {
-	rows, err := d.db.QueryContext(d.ctx, query)
+func (d *Database) ExecuteJSONQuery(query string) (string, error) {
+	var result string
+	err := d.db.QueryRowContext(d.ctx, `
+		SELECT CAST(to_json(list(t)) AS string) FROM (SELECT * FROM json_execute_serialized_sql(?)) t
+	`, query).Scan(&result)
 	if err != nil {
-			return nil, err
+		return result, err
 	}
-	return rows, nil
+
+	return result, nil
 }
