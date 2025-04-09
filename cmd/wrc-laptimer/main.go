@@ -93,7 +93,7 @@ func main() {
 		mux := http.NewServeMux()
 
 		// Add query endpoint
-		mux.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				return
