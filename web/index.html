@@ -96,27 +96,31 @@
           name: "N/A",
         });
 
+        async function postQuery(queryPayload) {
+          const response = await fetch('/api/query', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'plain/text; charset=utf-8',
+            },
+            body: queryPayload,
+          });
+          if (!response.ok) {
+            throw new Error("Failed to postQuery", queryPayload);
+          }
+          const data = await response.json();
+          return data;
+        }
+
         async function fetchCurrentDriver() {
           try {
-            const query = `
-              SELECT users.name AS user_name
+            const queryPayload = `SELECT users.name AS user_name
               FROM user_logins
               JOIN users ON user_logins.user_id = users.id
               ORDER BY user_logins.timestamp DESC
-              LIMIT 1
-            `;
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(query)}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch current driver");
-            }
-
-            const data = await response.json();
+              LIMIT 1;`
+            const data = await postQuery(queryPayload);
             const currentDriverName = data[0]?.user_name || "N/A";
 
-            // Update the Alpine.js store
             Alpine.store("currentDriver").name = currentDriverName;
           } catch (error) {
             console.error("Error fetching current driver:", error);
@@ -127,9 +131,7 @@
           try {
             const startOfDay = `${date} 00:00:00`;
             const endOfDay = `${date} 23:59:59`;
-
-            const query = `
-              SELECT sessions.user_id, users.name AS user_name, 
+            const queryPayload = `SELECT sessions.user_id, users.name AS user_name, 
                      sessions.stage_result_time AS time,
                      sessions.route_id, sessions.location_id, 
                      sessions.vehicle_id, sessions.vehicle_manufacturer_id, 
@@ -137,19 +139,9 @@
               FROM sessions 
               JOIN users ON sessions.user_id = users.id 
               WHERE sessions.started_at BETWEEN '${startOfDay}' AND '${endOfDay}' 
-              AND sessions.stage_result_status = 1
-            `;
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(query)}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch sessions");
-            }
-
-            const data = await response.json();
-
-            // Group laps by track and car class to find the majority
+              AND sessions.stage_result_status = 1;`
+            
+            const data = await postQuery(queryPayload);
             const trackCounts = {};
             const carClassCounts = {};
             data.forEach((item) => {
@@ -219,26 +211,25 @@
             // Convert grouped data into an array and sort by fastest lap time
             const laptimes = Object.values(userLaps)
               .map((user, index) => ({
-                position: 0, // Placeholder for position, will be updated after sorting
+                position: 0,
                 name: user.name,
                 time: formatTime(user.fastestTime),
                 rawTime: user.fastestTime,
-                diff: "", // Placeholder for diff logic
+                diff: "",
                 attempts: user.totalAttempts,
               }))
-              .sort((a, b) => a.rawTime - b.rawTime); // Sort by fastest lap time
+              .sort((a, b) => a.rawTime - b.rawTime);
 
             // Update positions and calculate time differences
             const fastestTime = laptimes[0]?.rawTime || 0;
             laptimes.forEach((laptime, index) => {
-              laptime.position = index + 1; // Update position based on sorted order
+              laptime.position = index + 1;
               laptime.diff =
                 laptime.rawTime > fastestTime
                   ? `+${formatTime(laptime.rawTime - fastestTime)}`
-                  : ""; // Add "+" to the diff time
+                  : "";
             });
 
-            // Update the Alpine.js store
             Alpine.store("laptimer").laptimes = laptimes;
           } catch (error) {
             console.error("Error fetching sessions:", error);
@@ -247,17 +238,8 @@
 
         async function getRouteName(routeId) {
           try {
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(
-                `SELECT name FROM routes WHERE id = ${routeId}`
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch route name");
-            }
-
-            const data = await response.json();
+            const queryPayload = `SELECT name FROM routes WHERE id = ${routeId}`
+            const data = await postQuery(queryPayload);
             return data[0]?.name || "Unknown Route";
           } catch (error) {
             console.error("Error fetching route name:", error);
@@ -267,17 +249,8 @@
 
         async function getLocationName(locationId) {
           try {
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(
-                `SELECT name FROM locations WHERE id = ${locationId}`
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch location name");
-            }
-
-            const data = await response.json();
+            const queryPayload = `SELECT name FROM locations WHERE id = ${locationId}`
+            const data = await postQuery(queryPayload);
             return data[0]?.name || "Unknown Location";
           } catch (error) {
             console.error("Error fetching location name:", error);
@@ -287,17 +260,8 @@
 
         async function getVehicleName(vehicleId) {
           try {
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(
-                `SELECT name FROM vehicles WHERE id = ${vehicleId}`
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch vehicle name");
-            }
-
-            const data = await response.json();
+            const queryPayload = `SELECT name FROM vehicles WHERE id = ${vehicleId}`
+            const data = await postQuery(queryPayload);
             return data[0]?.name || "Unknown Vehicle";
           } catch (error) {
             console.error("Error fetching vehicle name:", error);
@@ -307,17 +271,8 @@
 
         async function getManufacturerName(manufacturerId) {
           try {
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(
-                `SELECT name FROM vehicle_manufacturers WHERE id = ${manufacturerId}`
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch manufacturer name");
-            }
-
-            const data = await response.json();
+            const queryPayload = `name FROM vehicle_manufacturers WHERE id = ${manufacturerId}`
+            const data = await postQuery(queryPayload);
             return data[0]?.name || "Unknown Manufacturer";
           } catch (error) {
             console.error("Error fetching manufacturer name:", error);
@@ -327,17 +282,8 @@
 
         async function getClassName(classId) {
           try {
-            const response = await fetch(
-              `/api/query?query=${encodeURIComponent(
-                `SELECT name FROM vehicle_classes WHERE id = ${classId}`
-              )}`
-            );
-
-            if (!response.ok) {
-              throw new Error("Failed to fetch class name");
-            }
-
-            const data = await response.json();
+            const queryPayload = `SELECT name FROM vehicle_classes WHERE id = ${classId}`
+            const data = await postQuery(queryPayload);
             return data[0]?.name || "Unknown Class";
           } catch (error) {
             console.error("Error fetching class name:", error);
@@ -362,12 +308,20 @@
 
         fetchCurrentDriver();
         const today = new Date().toISOString().split("T")[0];
-        fetchSessionsForDay(today);
 
-        setInterval(() => {
-          fetchCurrentDriver();
-          fetchSessionsForDay(today);
-        }, 5000);
+        function subtractOneDay(dateString) {
+          const date = new Date(dateString);
+          date.setDate(date.getDate() - 1);
+          return date.toISOString().split("T")[0];
+        }
+
+        const yesterday = subtractOneDay(today);
+        fetchSessionsForDay(yesterday);
+
+        // setInterval(() => {
+        //   fetchCurrentDriver();
+        //   fetchSessionsForDay(today);
+        // }, 5000);
       });
     </script>
   </body>
