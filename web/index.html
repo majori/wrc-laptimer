@@ -10,6 +10,7 @@
       href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
       rel="stylesheet"
     />
+    <script src="index.js" type="module"></script>
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
@@ -18,7 +19,7 @@
   <body>
     <aside>
       <div class="bg-image"></div>
-      <div class="main">
+      <div x-data class="main">
         <!-- Current Driver Section -->
         <header class="current-driver">
           <span class="label">Current Driver:</span>
@@ -30,10 +31,16 @@
         </header>
 
         <!-- Event Info Section -->
-        <h1>Leaderboard</h1>
-        <div x-data class="event-info">
+        <div class="event-header">
+          <h1>Leaderboard</h1>
+        </div>
+        <div x-data="controller" class="event-info">
           <div class="event-details">
-            <span class="stage-date" x-text="$store.event.date"></span>
+            <div class="date-box">
+              <span class="btn" @click="changeDay(-1)"><</span>
+              <span class="stage-date" x-text="$store.event.date"></span>
+              <span class="btn" @click="changeDay(1)">></span>
+            </div>
             <span class="stage-info">
               <span x-text="$store.event.stage"></span> -
               <span x-text="$store.event.location"></span>
@@ -56,13 +63,15 @@
               <th>Diff</th>
             </tr>
           </thead>
-          <tbody x-data>
+          <tbody x-data="controller">
             <template
               x-for="(laptime, index) in $store.laptimer.laptimes"
               :key="laptime.position"
             >
               <tr
                 :class="index === $store.laptimer.latestDriveIndex ? 'highlight' : ''"
+                @click="showDriverAttempts(laptime.name)"
+                style="cursor: pointer"
               >
                 <td x-text="laptime.position"></td>
                 <td x-text="laptime.name"></td>
@@ -73,256 +82,59 @@
             </template>
           </tbody>
         </table>
+
+        <!-- Modal for Driver Attempts -->
+        <div
+          x-data="controller"
+          class="modal"
+          style="
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+          "
+        >
+          <div
+            class="modal-content"
+            style="
+              background: #333;
+              margin: 10% auto;
+              padding: 20px;
+              width: 50%;
+              border-radius: 8px;
+            "
+          >
+            <h2
+              x-text="`${$store.driverAttempts.selectedDriver}'s Attempts`"
+            ></h2>
+            <table class="driver-attempts">
+              <thead>
+                <tr>
+                  <th>Attempt #</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template
+                  x-for="(attempt, index) in $store.driverAttempts.driverAttempts"
+                  :key="index"
+                >
+                  <tr>
+                    <td x-text="index + 1"></td>
+                    <td x-text="attempt.time"></td>
+                    <td x-text="attempt.status"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <button x-data="controller" @click="closeModal()">Close</button>
+          </div>
+        </div>
       </div>
     </aside>
-
-    <script>
-      document.addEventListener("alpine:init", () => {
-        Alpine.store("laptimer", {
-          laptimes: [],
-          latestDriveIndex: -1,
-        });
-
-        Alpine.store("event", {
-          class: "",
-          car: "",
-          manufacturer: "",
-          date: "",
-          stage: "",
-          location: "",
-        });
-
-        Alpine.store("currentDriver", {
-          name: "N/A",
-        });
-
-        async function postQuery(queryPayload) {
-          const response = await fetch('/api/query', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'plain/text; charset=utf-8',
-            },
-            body: queryPayload,
-          });
-          if (!response.ok) {
-            throw new Error("Failed to postQuery", queryPayload);
-          }
-          const data = await response.json();
-          return data;
-        }
-
-        async function fetchCurrentDriver() {
-          try {
-            const queryPayload = `SELECT users.name AS user_name
-              FROM user_logins
-              JOIN users ON user_logins.user_id = users.id
-              ORDER BY user_logins.timestamp DESC
-              LIMIT 1;`
-            const data = await postQuery(queryPayload);
-            const currentDriverName = data[0]?.user_name || "N/A";
-
-            Alpine.store("currentDriver").name = currentDriverName;
-          } catch (error) {
-            console.error("Error fetching current driver:", error);
-          }
-        }
-
-        async function fetchSessionsForDay(date) {
-          try {
-            const startOfDay = `${date} 00:00:00`;
-            const endOfDay = `${date} 23:59:59`;
-            const queryPayload = `SELECT sessions.user_id, users.name AS user_name, 
-                     sessions.stage_result_time AS time,
-                     sessions.route_id, sessions.location_id, 
-                     sessions.vehicle_id, sessions.vehicle_manufacturer_id, 
-                     sessions.vehicle_class_id
-              FROM sessions 
-              JOIN users ON sessions.user_id = users.id 
-              WHERE sessions.started_at BETWEEN '${startOfDay}' AND '${endOfDay}' 
-              AND sessions.stage_result_status = 1;`
-            
-            const data = await postQuery(queryPayload);
-            const trackCounts = {};
-            const carClassCounts = {};
-            data.forEach((item) => {
-              trackCounts[item.route_id] =
-                (trackCounts[item.route_id] || 0) + 1;
-              carClassCounts[item.vehicle_class_id] =
-                (carClassCounts[item.vehicle_class_id] || 0) + 1;
-            });
-
-            // Find the majority track and car class
-            const mainTrackId = Object.keys(trackCounts).reduce((a, b) =>
-              trackCounts[a] > trackCounts[b] ? a : b
-            );
-            const mainCarClassId = Object.keys(carClassCounts).reduce((a, b) =>
-              carClassCounts[a] > carClassCounts[b] ? a : b
-            );
-
-            // Filter data to only include laps from the majority track and car class
-            const filteredData = data.filter(
-              (item) =>
-                item.route_id == mainTrackId &&
-                item.vehicle_class_id == mainCarClassId
-            );
-
-            // Fetch event info
-            const routeName = await getRouteName(mainTrackId);
-            const locationName = await getLocationName(
-              filteredData[0]?.location_id
-            );
-            const carName = await getVehicleName(filteredData[0]?.vehicle_id);
-            const manufacturerName = await getManufacturerName(
-              filteredData[0]?.vehicle_manufacturer_id
-            );
-            const className = await getClassName(mainCarClassId);
-
-            // Update the event info
-            Alpine.store("event", {
-              class: className,
-              car: carName,
-              manufacturer: manufacturerName,
-              date: formatDate(date),
-              stage: routeName,
-              location: locationName,
-            });
-
-            // Group laps by user and calculate fastest lap and total attempts
-            const userLaps = {};
-            filteredData.forEach((item) => {
-              const userId = item.user_id;
-              const time = parseFloat(item.time);
-
-              if (!userLaps[userId]) {
-                userLaps[userId] = {
-                  name: item.user_name,
-                  fastestTime: time,
-                  totalAttempts: 1,
-                };
-              } else {
-                userLaps[userId].fastestTime = Math.min(
-                  userLaps[userId].fastestTime,
-                  time
-                );
-                userLaps[userId].totalAttempts += 1;
-              }
-            });
-
-            // Convert grouped data into an array and sort by fastest lap time
-            const laptimes = Object.values(userLaps)
-              .map((user, index) => ({
-                position: 0,
-                name: user.name,
-                time: formatTime(user.fastestTime),
-                rawTime: user.fastestTime,
-                diff: "",
-                attempts: user.totalAttempts,
-              }))
-              .sort((a, b) => a.rawTime - b.rawTime);
-
-            // Update positions and calculate time differences
-            const fastestTime = laptimes[0]?.rawTime || 0;
-            laptimes.forEach((laptime, index) => {
-              laptime.position = index + 1;
-              laptime.diff =
-                laptime.rawTime > fastestTime
-                  ? `+${formatTime(laptime.rawTime - fastestTime)}`
-                  : "";
-            });
-
-            Alpine.store("laptimer").laptimes = laptimes;
-          } catch (error) {
-            console.error("Error fetching sessions:", error);
-          }
-        }
-
-        async function getRouteName(routeId) {
-          try {
-            const queryPayload = `SELECT name FROM routes WHERE id = ${routeId}`
-            const data = await postQuery(queryPayload);
-            return data[0]?.name || "Unknown Route";
-          } catch (error) {
-            console.error("Error fetching route name:", error);
-            return "Unknown Route";
-          }
-        }
-
-        async function getLocationName(locationId) {
-          try {
-            const queryPayload = `SELECT name FROM locations WHERE id = ${locationId}`
-            const data = await postQuery(queryPayload);
-            return data[0]?.name || "Unknown Location";
-          } catch (error) {
-            console.error("Error fetching location name:", error);
-            return "Unknown Location";
-          }
-        }
-
-        async function getVehicleName(vehicleId) {
-          try {
-            const queryPayload = `SELECT name FROM vehicles WHERE id = ${vehicleId}`
-            const data = await postQuery(queryPayload);
-            return data[0]?.name || "Unknown Vehicle";
-          } catch (error) {
-            console.error("Error fetching vehicle name:", error);
-            return "Unknown Vehicle";
-          }
-        }
-
-        async function getManufacturerName(manufacturerId) {
-          try {
-            const queryPayload = `name FROM vehicle_manufacturers WHERE id = ${manufacturerId}`
-            const data = await postQuery(queryPayload);
-            return data[0]?.name || "Unknown Manufacturer";
-          } catch (error) {
-            console.error("Error fetching manufacturer name:", error);
-            return "Unknown Manufacturer";
-          }
-        }
-
-        async function getClassName(classId) {
-          try {
-            const queryPayload = `SELECT name FROM vehicle_classes WHERE id = ${classId}`
-            const data = await postQuery(queryPayload);
-            return data[0]?.name || "Unknown Class";
-          } catch (error) {
-            console.error("Error fetching class name:", error);
-            return "Unknown Class";
-          }
-        }
-
-        function formatTime(seconds) {
-          const mins = Math.floor(seconds / 60);
-          const secs = Math.floor(seconds % 60);
-          const ms = Math.round((seconds % 1) * 1000);
-          return `${String(mins).padStart(2, "0")}:${String(secs).padStart(
-            2,
-            "0"
-          )}.${String(ms).padStart(3, "0")}`;
-        }
-
-        function formatDate(date) {
-          const [year, month, day] = date.split("-");
-          return `${day}.${month}`;
-        }
-
-        fetchCurrentDriver();
-        const today = new Date().toISOString().split("T")[0];
-
-        function subtractOneDay(dateString) {
-          const date = new Date(dateString);
-          date.setDate(date.getDate() - 1);
-          return date.toISOString().split("T")[0];
-        }
-
-        const yesterday = subtractOneDay(today);
-        fetchSessionsForDay(yesterday);
-
-        // setInterval(() => {
-        //   fetchCurrentDriver();
-        //   fetchSessionsForDay(today);
-        // }, 5000);
-      });
-    </script>
   </body>
 </html>

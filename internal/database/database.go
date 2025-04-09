@@ -67,13 +67,15 @@ func (d *Database) Close() {
 }
 
 func (d *Database) ExecuteSelectQuery(query string) (string, error) {
-	var result string
+	var result sql.NullString
 	err := d.db.QueryRowContext(d.ctx, `
-		SELECT CAST(to_json(list(t)) AS string) FROM (SELECT * FROM json_execute_serialized_sql(json_serialize_sql(?::STRING))) t
-	`, query).Scan(&result)
+        SELECT COALESCE(CAST(to_json(list(t)) AS VARCHAR), '[]') 
+        FROM (SELECT * FROM json_execute_serialized_sql(json_serialize_sql(?::STRING))) t
+    `, query).Scan(&result)
 	if err != nil {
-		return result, err
+		return "", err
 	}
 
-	return result, nil
+	// Return the string value if valid, otherwise return an empty string
+	return result.String, nil
 }
