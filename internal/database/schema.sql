@@ -510,12 +510,52 @@ CREATE TABLE IF NOT EXISTS user_logins (
   user_id TEXT REFERENCES users(id),
 );
 
+CREATE SEQUENCE IF NOT EXISTS race_series_id_sequence START 1;
+
+CREATE TABLE IF NOT EXISTS race_series (
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('race_series_id_sequence'),
+  name                  TEXT,
+  vehicle_id            USMALLINT REFERENCES vehicles(id),
+  vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
+  active                BOOLEAN DEFAULT false,
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  started_at            TIMESTAMP,
+  ended_at              TIMESTAMP
+);
+
+CREATE SEQUENCE IF NOT EXISTS race_events_id_sequence START 1;
+
+CREATE TABLE IF NOT EXISTS race_events (
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('race_events_id_sequence'),
+  race_series_id        INTEGER REFERENCES race_series(id),
+  location_id           USMALLINT REFERENCES locations(id),
+  name                  TEXT,
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  vehicle_id            USMALLINT REFERENCES vehicles(id),
+  vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
+  active                BOOLEAN DEFAULT false,
+  started_at            TIMESTAMP,
+  ended_at              TIMESTAMP
+);
+
+CREATE SEQUENCE IF NOT EXISTS points_id_sequence START 1;
+
+CREATE TABLE IF NOT EXISTS points (
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('points_id_sequence'),
+  user_id               TEXT REFERENCES users(id),
+  race_event_id         INTEGER REFERENCES race_events(id),
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  points                INTEGER,
+  position              INTEGER
+);
+
 CREATE SEQUENCE IF NOT EXISTS session_id_sequence START 1;
 
 CREATE TABLE IF NOT EXISTS sessions (
   id                        INTEGER PRIMARY KEY DEFAULT nextval('session_id_sequence'),
   started_at                TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   user_id                   TEXT REFERENCES users(id),
+  race_event_id             INTEGER REFERENCES race_events(id),
   game_mode                 USMALLINT,
   location_id               USMALLINT,
   route_id                  USMALLINT,
