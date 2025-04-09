@@ -93,7 +93,7 @@ func main() {
 		mux := http.NewServeMux()
 
 		// Add query endpoint
-		mux.HandleFunc("/query", func(w http.ResponseWriter, r *http.Request) {
+		mux.HandleFunc("/api/query", func(w http.ResponseWriter, r *http.Request) {
 			if r.Method != http.MethodPost {
 				http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 				return
@@ -108,9 +108,9 @@ func main() {
 
 			reqBodyString := string(reqBody)
 
-			result, err := db.ExecuteJSONQuery(reqBodyString)
+			result, err := db.ExecuteSelectQuery(reqBodyString)
 			if err != nil {
-				slog.Error("could not execute JSON query", "error", err)
+				slog.Error("could not execute select query", "error", err)
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}

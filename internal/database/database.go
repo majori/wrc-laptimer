@@ -66,10 +66,10 @@ func (d *Database) Close() {
 	}
 }
 
-func (d *Database) ExecuteJSONQuery(query string) (string, error) {
+func (d *Database) ExecuteSelectQuery(query string) (string, error) {
 	var result string
 	err := d.db.QueryRowContext(d.ctx, `
-		SELECT CAST(to_json(list(t)) AS string) FROM (SELECT * FROM json_execute_serialized_sql(?)) t
+		SELECT CAST(to_json(list(t)) AS string) FROM (SELECT * FROM json_execute_serialized_sql(json_serialize_sql(?::STRING))) t
 	`, query).Scan(&result)
 	if err != nil {
 		return result, err
