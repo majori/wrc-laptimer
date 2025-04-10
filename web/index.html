@@ -31,57 +31,121 @@
         </header>
 
         <!-- Event Info Section -->
-        <div class="event-header">
-          <h1>Leaderboard</h1>
-        </div>
-        <div x-data="controller" class="event-info">
-          <div class="event-details">
-            <div class="date-box">
-              <span class="btn" @click="changeDay(-1)"><</span>
-              <span class="stage-date" x-text="$store.event.date"></span>
-              <span class="btn" @click="changeDay(1)">></span>
+        <div class="vertical-split">
+          <div id="stage-results">
+            <div class="event-header">
+              <h1>Leaderboard</h1>
             </div>
-            <span class="stage-info">
-              <span x-text="$store.event.stage"></span> -
-              <span x-text="$store.event.location"></span>
-            </span>
-            <span class="car-class">
-              <span class="car-car" x-text="$store.event.car"></span>
-              (<span x-text="$store.event.class"></span>)
-            </span>
+            <div x-data="controller" class="event-info">
+              <div class="event-details">
+                <div class="date-box">
+                  <span class="btn prev" @click="changeDay(-1)"><</span>
+                  <span class="stage-date" x-text="$store.event.date"></span>
+                  <span class="btn next" @click="changeDay(1)">></span>
+                </div>
+                <div class="stage-info">
+                  <span x-text="$store.event.stage"></span> -
+                  <span x-text="$store.event.location"></span>
+                  <span class="car-class">
+                    <span class="car-car" x-text="$store.event.car"></span>
+                    <span x-text="$store.event.class"></span>
+                  </span>
+                  <span
+                    class="dropdown-toggle"
+                    @click="showDropdown = !showDropdown"
+                  >
+                    +
+                  </span>
+                </div>
+                <div
+                  class="stage-vehicle-dropdown"
+                  x-show="showDropdown"
+                  style="margin-top: 10px"
+                >
+                  <label for="stage-vehicle">Stage + Vehicle:</label>
+                  <select
+                    id="stage-vehicle"
+                    @change="updateStageVehicle($event.target.value)"
+                  >
+                    <template
+                      x-for="option in $store.state.stageVehicleOptions"
+                      :key="`${option.routeId}+${option.vehicleId}`"
+                    >
+                      <option
+                        :value="`${option.routeId}+${option.vehicleId}`"
+                        x-text="`Stage ${option.routeId} + Vehicle ${option.vehicleId}`"
+                      ></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <table class="leaderboard">
+              <thead>
+                <tr>
+                  <th>POS.</th>
+                  <th>Driver</th>
+                  <th>Tries</th>
+                  <th>Time</th>
+                  <th>Diff</th>
+                </tr>
+              </thead>
+              <tbody x-data="controller">
+                <template
+                  x-for="(laptime, index) in $store.laptimer.laptimes"
+                  :key="laptime.position"
+                >
+                  <tr
+                    :class="index === $store.laptimer.latestDriveIndex ? 'highlight' : ''"
+                    @click="showDriverAttempts(laptime.name)"
+                    style="cursor: pointer"
+                  >
+                    <td x-text="laptime.position"></td>
+                    <td x-text="laptime.name"></td>
+                    <td x-text="laptime.attempts"></td>
+                    <td x-text="laptime.time"></td>
+                    <td x-text="laptime.diff"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <div id="championship-results">
+            <div class="event-header">
+              <h1>Championship</h1>
+            </div>
+            <div x-data="controller" class="championship-info">
+              <div class="event-details">
+                <div class="championship-title">
+                  <span> Standings</span>
+                </div>
+              </div>
+            </div>
+
+            <table class="leaderboard">
+              <thead>
+                <tr>
+                  <th>POS.</th>
+                  <th>Driver</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody x-data="controller">
+                <template
+                  x-for="(standing, index) in $store.championship.standings"
+                  :key="standing.position"
+                >
+                  <tr>
+                    <td x-text="standing.position"></td>
+                    <td x-text="standing.name"></td>
+                    <td x-text="standing.points"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
           </div>
         </div>
-
-        <!-- Leaderboard Table -->
-        <table class="leaderboard">
-          <thead>
-            <tr>
-              <th>POS.</th>
-              <th>Driver</th>
-              <th>Tries</th>
-              <th>Time</th>
-              <th>Diff</th>
-            </tr>
-          </thead>
-          <tbody x-data="controller">
-            <template
-              x-for="(laptime, index) in $store.laptimer.laptimes"
-              :key="laptime.position"
-            >
-              <tr
-                :class="index === $store.laptimer.latestDriveIndex ? 'highlight' : ''"
-                @click="showDriverAttempts(laptime.name)"
-                style="cursor: pointer"
-              >
-                <td x-text="laptime.position"></td>
-                <td x-text="laptime.name"></td>
-                <td x-text="laptime.attempts"></td>
-                <td x-text="laptime.time"></td>
-                <td x-text="laptime.diff"></td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
 
         <!-- Modal for Driver Attempts -->
         <div x-data="controller" class="modal">

@@ -96,3 +96,19 @@ export async function getCurrentDriver() {
     return "N/A";
   }
 }
+
+export async function getChampionshipStandings() {
+  try {
+    const queryPayload = `
+      SELECT users.name AS user_name, points.user_id, points.points
+      FROM points
+      JOIN users ON points.user_id = users.id
+      ORDER BY points.points DESC;
+    `;
+    const data = await postQuery(queryPayload);
+    return data;
+  } catch (error) {
+    console.error("Error fetching championship standings:", error);
+    return [];
+  }
+}

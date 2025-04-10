@@ -70,6 +70,8 @@ body {
 }
 
 .date-box {
+  display: flex;
+  align-items: center;
   padding-right: 55px;
 }
 .event-info {
@@ -85,6 +87,28 @@ body {
   color: #f5f5f7;
   padding: 20px;
   margin-top: 20px;
+  min-height: 43px;
+}
+
+.championship-info {
+  font-size: 26px;
+  font-weight: bold;
+  background: linear-gradient(
+    100deg,
+    #fc4c02 0%,
+    #fc4c02 35px,
+    #202a44 35px,
+    #202a44 100%
+  );
+  color: #f5f5f7;
+  padding: 20px;
+  margin-top: 20px;
+  min-height: 43px;
+}
+
+.championship-title {
+  margin-left: 35px;
+  margin-top: 5px;
 }
 
 .btn {
@@ -102,6 +126,48 @@ body {
 .btn:hover {
   cursor: pointer;
   color: #3b4a70;
+}
+
+.vertical-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 45px;
+  justify-content: space-between; /* Distribute items evenly with gaps */
+  align-items: flex-start; /* Align items to the top */
+}
+
+#stage-results {
+  flex: 1; /* Allow sections to grow and take equal space */
+  min-width: 300px; /* Ensure sections don't shrink too much */
+}
+
+.dropdown-toggle {
+  color: #3b4a70;
+  margin-left: 25px;
+  font-weight: bold;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Hide the arrows and + button by default */
+.date-box .btn,
+.stage-info .dropdown-toggle {
+  opacity: 0;
+  transition: opacity 0.1s ease;
+}
+
+/* Show the arrows when hovering over the date-box */
+.date-box:hover .btn {
+  opacity: 1;
+}
+
+/* Show the + button when hovering over the stage-info */
+.stage-info:hover .dropdown-toggle {
+  opacity: 1;
 }
 
 /* Leaderboard Table */
@@ -151,11 +217,30 @@ body {
   text-align: center;
 }
 
+.leaderboard th:last-child {
+  text-align: end;
+}
+
 .leaderboard td:last-child,
 .leaderboard td:nth-last-child(3),
 .leaderboard td:nth-last-child(2) {
   padding-right: 15px;
   width: 100px;
+}
+
+#championship-results .leaderboard td:first-child {
+  width: 20px;
+  text-align: start;
+}
+
+#championship-results .leaderboard td:last-child {
+  width: 20px;
+  text-align: end;
+}
+
+#championship-results {
+  display: none; /* Hidden by default */
+  min-width: 450px;
 }
 
 th {
@@ -181,13 +266,15 @@ td {
 .car-class {
   padding-left: 20px;
   font-size: 26px;
-  font-weight: normal;
+  font-weight: 300;
+  font-style: italic;
   text-align: center;
   color: #bbb;
 }
 
 .car-car {
-  font-weight: 300;
+  font-weight: normal;
+  font-style: normal;
 }
 
 .leaderboard-title {

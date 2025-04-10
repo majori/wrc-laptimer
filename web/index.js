@@ -6,6 +6,7 @@ import {
   getClassName,
   getSessionsByDay,
   getCurrentDriver,
+  getChampionshipStandings,
 } from "./api.js";
 
 document.addEventListener("alpine:init", () => {
@@ -23,8 +24,15 @@ document.addEventListener("alpine:init", () => {
     location: "",
   });
 
+  Alpine.store("championship", {
+    enabled: true,
+    standings: [],
+  });
+
   Alpine.store("state", {
     currentDate: "2025-01-01",
+    selectedStageVehicle: null,
+    stageVehicleOptions: [],
   });
 
   Alpine.store("currentDriver", {
@@ -37,6 +45,8 @@ document.addEventListener("alpine:init", () => {
   });
 
   Alpine.data("controller", () => ({
+    showDropdown: false,
+
     async showDriverAttempts(driverName) {
       Alpine.store("driverAttempts").selectedDriver = driverName;
 
@@ -82,9 +92,24 @@ document.addEventListener("alpine:init", () => {
       );
       currentDate.setDate(currentDate.getDate() + offset);
       const newDate = currentDate.toISOString().split("T")[0];
+
+      // Reset the selected stage and vehicle combo
+      Alpine.store("state").selectedStageVehicle = null;
+
+      // Update the current date in the store
       Alpine.store("state").currentDate = newDate;
       Alpine.store("event").date = formatDate(newDate);
+
+      // Fetch sessions for the new date
       fetchSessionsForDay(newDate);
+    },
+
+    async updateStageVehicle(selectedValue) {
+      // Save the selected combo to the store
+      Alpine.store("state").selectedStageVehicle = selectedValue;
+
+      // Immediately refetch sessions for the current day
+      await fetchSessionsForDay(Alpine.store("state").currentDate);
     },
   }));
 
@@ -109,38 +134,54 @@ document.addEventListener("alpine:init", () => {
           location: "-",
         });
         Alpine.store("laptimer").laptimes = [];
+        Alpine.store("state").stageVehicleOptions = [];
         return;
       }
 
-      const trackCounts = {};
-      const carClassCounts = {};
+      // Group sessions by stage and vehicle combinations
+      const stageVehicleMap = {};
       data.forEach((item) => {
-        trackCounts[item.route_id] = (trackCounts[item.route_id] ?? 0) + 1;
-        carClassCounts[item.vehicle_class_id] =
-          (carClassCounts[item.vehicle_class_id] ?? 0) + 1;
+        const key = `${item.route_id}+${item.vehicle_id}`;
+        if (!stageVehicleMap[key]) {
+          stageVehicleMap[key] = [];
+        }
+        stageVehicleMap[key].push(item);
       });
 
-      const mainTrackId = Object.keys(trackCounts).reduce((a, b) =>
-        trackCounts[a] > trackCounts[b] ? a : b
-      );
-      const mainCarClassId = Object.keys(carClassCounts).reduce((a, b) =>
-        carClassCounts[a] > carClassCounts[b] ? a : b
-      );
+      // Populate dropdown options
+      const stageVehicleOptions = Object.keys(stageVehicleMap).map((key) => {
+        const [routeId, vehicleId] = key.split("+");
+        return { routeId, vehicleId };
+      });
+      Alpine.store("state").stageVehicleOptions = stageVehicleOptions;
 
-      const filteredData = data.filter(
-        (item) =>
-          item.route_id == mainTrackId &&
-          item.vehicle_class_id == mainCarClassId
-      );
+      // Use the selected stage and vehicle combo if available
+      let selectedKey = Alpine.store("state").selectedStageVehicle;
+      if (!selectedKey) {
+        // Default to the most recent session if no combo is selected
+        const mostRecentSession = data.reduce((latest, session) =>
+          new Date(session.started_at) > new Date(latest.started_at)
+            ? session
+            : latest
+        );
+        selectedKey = `${mostRecentSession.route_id}+${mostRecentSession.vehicle_id}`;
+        Alpine.store("state").selectedStageVehicle = selectedKey;
+      }
 
-      // Fetch event info
-      const routeName = await getRouteName(mainTrackId);
-      const locationName = await getLocationName(filteredData[0]?.location_id);
-      const carName = await getVehicleName(filteredData[0]?.vehicle_id);
+      const [routeId, vehicleId] = selectedKey.split("+");
+
+      // Fetch event info for the selected session
+      const routeName = await getRouteName(routeId);
+      const locationName = await getLocationName(
+        stageVehicleMap[selectedKey][0]?.location_id
+      );
+      const carName = await getVehicleName(vehicleId);
       const manufacturerName = await getManufacturerName(
-        filteredData[0]?.vehicle_manufacturer_id
+        stageVehicleMap[selectedKey][0]?.vehicle_manufacturer_id
       );
-      const className = await getClassName(mainCarClassId);
+      const className = await getClassName(
+        stageVehicleMap[selectedKey][0]?.vehicle_class_id
+      );
 
       // Update the event info
       Alpine.store("event", {
@@ -151,6 +192,9 @@ document.addEventListener("alpine:init", () => {
         stage: routeName,
         location: locationName,
       });
+
+      // Filter sessions based on the selected stage and vehicle
+      const filteredData = stageVehicleMap[selectedKey];
 
       // Group laps by user and calculate fastest lap and total attempts
       const userLaps = {};
@@ -217,6 +261,7 @@ document.addEventListener("alpine:init", () => {
         location: "-",
       });
       Alpine.store("laptimer").laptimes = [];
+      Alpine.store("state").stageVehicleOptions = [];
     }
   }
 
@@ -240,9 +285,40 @@ document.addEventListener("alpine:init", () => {
   Alpine.store("state").currentDate = today;
   fetchCurrentDriver();
   fetchSessionsForDay(today);
+  fetchChampionshipStandings();
 
   setInterval(() => {
     fetchCurrentDriver();
     fetchSessionsForDay(Alpine.store("state").currentDate);
+    fetchChampionshipStandings();
   }, 5000);
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Check for the "championship" parameter in the URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const championshipId = urlParams.get("championship");
+
+  if (championshipId) {
+    // Show the championship-results section
+    const championshipResults = document.getElementById("championship-results");
+    if (championshipResults) {
+      championshipResults.style.display = "block";
+    }
+  }
+});
+
+async function fetchChampionshipStandings() {
+  try {
+    const standings = await getChampionshipStandings();
+    Alpine.store("championship").standings = standings.map(
+      (standing, index) => ({
+        position: index + 1,
+        name: standing.user_name,
+        points: standing.points,
+      })
+    );
+  } catch (error) {
+    console.error("Error fetching championship standings:", error);
+  }
+}
