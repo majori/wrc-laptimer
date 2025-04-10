@@ -8,7 +8,6 @@ import (
 type RaceSeries struct {
 	ID             int           `db:"id"`
 	Name           string        `db:"name"`
-	VehicleID      sql.NullInt16 `db:"vehicle_id"`
 	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
 	Active         bool          `db:"active"`
 	CreatedAt      sql.NullTime  `db:"created_at"`
@@ -41,17 +40,16 @@ func (d *Database) GetActiveSeriesID() (sql.NullInt64, error) {
 	return activeSeriesID, nil
 }
 
-func (d *Database) CreateSeries(name string, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) (int, error) {
+func (d *Database) CreateSeries(name string, vehicleClassID sql.NullInt16) (int, error) {
 	var id int
 	err := d.db.QueryRowContext(d.ctx, `
-		INSERT INTO race_series (name, vehicle_id, vehicle_class_id)
-		VALUES (?, ?, ?)
+		INSERT INTO race_series (name, vehicle_class_id)
+		VALUES (?, ?)
 		RETURNING id;
-	`, name, vehicleID, vehicleClassID).Scan(&id)
+	`, name, vehicleClassID).Scan(&id)
 	if err != nil {
 		return 0, fmt.Errorf("could not create series: %w", err)
 	}
-
 	return id, nil
 }
 
@@ -87,13 +85,12 @@ func (d *Database) EndSeries(id int) error {
 func (d *Database) GetSeries(id int) (*RaceSeries, error) {
 	var series RaceSeries
 	err := d.db.QueryRowContext(d.ctx, `
-		SELECT id, name, vehicle_id, vehicle_class_id, active, created_at, started_at, ended_at
+		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_series
 		WHERE id = ?;
 	`, id).Scan(
 		&series.ID,
 		&series.Name,
-		&series.VehicleID,
 		&series.VehicleClassID,
 		&series.Active,
 		&series.CreatedAt,
@@ -112,20 +109,23 @@ func (d *Database) GetSeries(id int) (*RaceSeries, error) {
 func (d *Database) GetAllSeries() ([]*RaceSeries, error) {
 	var series []*RaceSeries
 	rows, err := d.db.QueryContext(d.ctx, `
-		SELECT id, name, vehicle_id, vehicle_class_id, active, created_at, started_at, ended_at
+		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_series
 	`)
 	if err != nil {
 		return nil, fmt.Errorf("could not get series: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Printf("error closing rows: %v\n", err)
+		}
+	}()
 
 	for rows.Next() {
 		var s RaceSeries
 		err := rows.Scan(
 			&s.ID,
 			&s.Name,
-			&s.VehicleID,
 			&s.VehicleClassID,
 			&s.Active,
 			&s.CreatedAt,

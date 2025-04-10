@@ -7,13 +7,13 @@ import (
 
 type RaceEvent struct {
 	ID             int           `db:"id"`
+	Name           string        `db:"name"`
 	RaceSeriesID   sql.NullInt64 `db:"race_series_id"`
 	LocationID     sql.NullInt16 `db:"location_id"`
-	Name           string        `db:"name"`
-	CreatedAt      sql.NullTime  `db:"created_at"`
-	VehicleID      sql.NullInt16 `db:"vehicle_id"`
+	RouteID        sql.NullInt16 `db:"route_id"`
 	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
 	Active         bool          `db:"active"`
+	CreatedAt      sql.NullTime  `db:"created_at"`
 	StartedAt      sql.NullTime  `db:"started_at"`
 	EndedAt        sql.NullTime  `db:"ended_at"`
 }
@@ -38,14 +38,14 @@ func (d *Database) GetActiveEventID() (sql.NullInt64, error) {
 	activeEventID = eventID
 	return activeEventID, nil
 }
-func (d *Database) CreateEvent(name string, seriesID int, locationID sql.NullInt16, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) (int, error) {
+func (d *Database) CreateEvent(name string, seriesID sql.NullInt64, locationID sql.NullInt16, routeID sql.NullInt16, vehicleClassID sql.NullInt16) (int, error) {
 	query := `
-		INSERT INTO race_events (name, race_series_id, location_id, vehicle_id, vehicle_class_id, active, created_at)
+		INSERT INTO race_events (name, race_series_id, location_id, route_id, vehicle_class_id, active, created_at)
 		VALUES (?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
 		RETURNING id
 	`
 	var eventID int
-	err := d.db.QueryRow(query, name, seriesID, locationID, vehicleID, vehicleClassID).Scan(&eventID)
+	err := d.db.QueryRow(query, name, seriesID, locationID, routeID, vehicleClassID).Scan(&eventID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create event: %w", err)
 	}
@@ -101,7 +101,7 @@ func (d *Database) EndEvent(id int) error {
 
 func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 	query := `
-		SELECT id, race_series_id, location_id, name, created_at, vehicle_id, vehicle_class_id, active, started_at, ended_at
+		SELECT id, name, race_series_id, location_id, route_id, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_events
 		WHERE race_series_id = ?
 		ORDER BY created_at DESC
@@ -110,20 +110,24 @@ func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch series events: %w", err)
 	}
-	defer rows.Close()
+	defer func() {
+		if err := rows.Close(); err != nil {
+			fmt.Printf("failed to close rows: %v\n", err)
+		}
+	}()
 
 	var events []RaceEvent
 	for rows.Next() {
 		var event RaceEvent
 		err := rows.Scan(
 			&event.ID,
+			&event.Name,
 			&event.RaceSeriesID,
 			&event.LocationID,
-			&event.Name,
-			&event.CreatedAt,
-			&event.VehicleID,
+			&event.RouteID,
 			&event.VehicleClassID,
 			&event.Active,
+			&event.CreatedAt,
 			&event.StartedAt,
 			&event.EndedAt,
 		)
@@ -142,20 +146,20 @@ func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 
 func (d *Database) GetEvent(id int) (*RaceEvent, error) {
 	query := `
-		SELECT id, race_series_id, location_id, name, created_at, vehicle_id, vehicle_class_id, active, started_at, ended_at
+		SELECT id, name, race_series_id, location_id, route_id, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_events
 		WHERE id = ?
 	`
 	var event RaceEvent
 	err := d.db.QueryRow(query, id).Scan(
 		&event.ID,
+		&event.Name,
 		&event.RaceSeriesID,
 		&event.LocationID,
-		&event.Name,
-		&event.CreatedAt,
-		&event.VehicleID,
+		&event.RouteID,
 		&event.VehicleClassID,
 		&event.Active,
+		&event.CreatedAt,
 		&event.StartedAt,
 		&event.EndedAt,
 	)

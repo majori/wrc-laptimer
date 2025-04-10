@@ -515,7 +515,6 @@ CREATE SEQUENCE IF NOT EXISTS race_series_id_sequence START 1;
 CREATE TABLE IF NOT EXISTS race_series (
   id                    INTEGER PRIMARY KEY DEFAULT nextval('race_series_id_sequence'),
   name                  TEXT,
-  vehicle_id            USMALLINT REFERENCES vehicles(id),
   vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
   active                BOOLEAN DEFAULT false,
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -528,12 +527,12 @@ CREATE SEQUENCE IF NOT EXISTS race_events_id_sequence START 1;
 CREATE TABLE IF NOT EXISTS race_events (
   id                    INTEGER PRIMARY KEY DEFAULT nextval('race_events_id_sequence'),
   race_series_id        INTEGER REFERENCES race_series(id),
-  location_id           USMALLINT REFERENCES locations(id),
   name                  TEXT,
-  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  vehicle_id            USMALLINT REFERENCES vehicles(id),
+  location_id           USMALLINT REFERENCES locations(id),
+  route_id              USMALLINT,
   vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
   active                BOOLEAN DEFAULT false,
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   started_at            TIMESTAMP,
   ended_at              TIMESTAMP
 );
@@ -546,6 +545,7 @@ CREATE TABLE IF NOT EXISTS points (
   race_event_id         INTEGER REFERENCES race_events(id),
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   points                INTEGER,
+  hc_mode               BOOLEAN,
   position              INTEGER
 );
 

@@ -15,7 +15,6 @@ import (
   Example:
   {
       "name": "WRC 2025",
-      "vehicle_id": 1,
       "vehicle_class_id": 2
   }
 
@@ -27,7 +26,6 @@ import (
 
 type CreateSeriesRequest struct {
 	Name           string  `json:"name"`
-	VehicleID      *uint16 `json:"vehicle_id"`
 	VehicleClassID *uint16 `json:"vehicle_class_id"`
 }
 
@@ -45,18 +43,13 @@ func CreateSeriesHandler(db *database.Database) http.HandlerFunc {
 		}
 
 		// Convert nullable fields to sql.NullInt16
-		var vehicleID sql.NullInt16
-		if req.VehicleID != nil {
-			vehicleID = sql.NullInt16{Int16: int16(*req.VehicleID), Valid: true}
-		}
-
 		var vehicleClassID sql.NullInt16
 		if req.VehicleClassID != nil {
 			vehicleClassID = sql.NullInt16{Int16: int16(*req.VehicleClassID), Valid: true}
 		}
 
 		// Call the CreateSeries function
-		seriesID, err := db.CreateSeries(req.Name, vehicleID, vehicleClassID)
+		seriesID, err := db.CreateSeries(req.Name, vehicleClassID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to create series: %v", err), http.StatusInternalServerError)
 			return
@@ -65,7 +58,10 @@ func CreateSeriesHandler(db *database.Database) http.HandlerFunc {
 		// Respond with the created series ID
 		response := CreateSeriesResponse{SeriesID: seriesID}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -76,7 +72,7 @@ Example Request:
 	    "name": "Event 1",
 	    "race_series_id": 1,
 	    "location_id": 2,
-	    "vehicle_id": 3,
+		"route_id": 3,
 	    "vehicle_class_id": 4
 	}
 
@@ -103,8 +99,9 @@ func parseIDFromPath(r *http.Request, prefix, suffix string) (int, error) {
 
 type CreateEventRequest struct {
 	Name           string  `json:"name"`
-	RaceSeriesID   int     `json:"race_series_id"`
+	RaceSeriesID   *uint16 `json:"race_series_id"`
 	LocationID     *uint16 `json:"location_id"`
+	RouteID        *uint16 `json:"route_id"`
 	VehicleID      *uint16 `json:"vehicle_id"`
 	VehicleClassID *uint16 `json:"vehicle_class_id"`
 }
@@ -122,15 +119,20 @@ func CreateEventHandler(db *database.Database) http.HandlerFunc {
 			return
 		}
 
+		var seriesID sql.NullInt64
+		if req.RaceSeriesID != nil {
+			seriesID = sql.NullInt64{Int64: int64(*req.RaceSeriesID), Valid: true}
+		}
+
 		// Convert nullable fields to sql.NullInt16
 		var locationID sql.NullInt16
 		if req.LocationID != nil {
 			locationID = sql.NullInt16{Int16: int16(*req.LocationID), Valid: true}
 		}
 
-		var vehicleID sql.NullInt16
-		if req.VehicleID != nil {
-			vehicleID = sql.NullInt16{Int16: int16(*req.VehicleID), Valid: true}
+		var routeID sql.NullInt16
+		if req.RouteID != nil {
+			routeID = sql.NullInt16{Int16: int16(*req.RouteID), Valid: true}
 		}
 
 		var vehicleClassID sql.NullInt16
@@ -139,7 +141,7 @@ func CreateEventHandler(db *database.Database) http.HandlerFunc {
 		}
 
 		// Call the CreateEvent function
-		eventID, err := db.CreateEvent(req.Name, req.RaceSeriesID, locationID, vehicleID, vehicleClassID)
+		eventID, err := db.CreateEvent(req.Name, seriesID, locationID, routeID, vehicleClassID)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("Failed to create event: %v", err), http.StatusInternalServerError)
 			return
@@ -148,7 +150,10 @@ func CreateEventHandler(db *database.Database) http.HandlerFunc {
 		// Respond with the created event ID
 		response := CreateEventResponse{EventID: eventID}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(response)
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to encode response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -177,7 +182,10 @@ func StartEventHandler(db *database.Database) http.HandlerFunc {
 		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "event started successfully"}`))
+		if _, err := w.Write([]byte(`{"status": "event started successfully"}`)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -206,7 +214,10 @@ func EndEventHandler(db *database.Database) http.HandlerFunc {
 		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "event ended successfully"}`))
+		if _, err := w.Write([]byte(`{"status": "event ended successfully"}`)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -234,7 +245,10 @@ func StartSeriesHandler(db *database.Database) http.HandlerFunc {
 		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "series started successfully"}`))
+		if _, err := w.Write([]byte(`{"status": "series started successfully"}`)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -261,6 +275,9 @@ func EndSeriesHandler(db *database.Database) http.HandlerFunc {
 		// Respond with success
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"status": "series ended successfully"}`))
+		if _, err := w.Write([]byte(`{"status": "series ended successfully"}`)); err != nil {
+			http.Error(w, fmt.Sprintf("Failed to write response: %v", err), http.StatusInternalServerError)
+			return
+		}
 	}
 }
