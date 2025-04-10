@@ -99,6 +99,8 @@ type TelemetrySessionEnd struct {
 	StageResultStatus      uint8
 }
 
+type TelemetryPacket = any
+
 const (
 	PacketHeaderSize = 12 // Size of the header in bytes
 
@@ -115,7 +117,7 @@ var (
 	ErrUnknownPacketType = errors.New("unknown packet type")
 )
 
-func UnmarshalBinary(data []byte) (*Header, any, error) {
+func UnmarshalBinary(data []byte) (*Header, TelemetryPacket, error) {
 	// Check if data is large enough to contain at least a header
 	if len(data) < PacketHeaderSize {
 		return nil, nil, ErrInvalidPacket
