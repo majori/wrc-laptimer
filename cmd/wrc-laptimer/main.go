@@ -12,6 +12,7 @@ import (
 
 	env "github.com/caarlos0/env/v6"
 	"github.com/majori/wrc-laptimer/internal/database"
+	httpHandlers "github.com/majori/wrc-laptimer/internal/http"
 	"github.com/majori/wrc-laptimer/internal/nfc"
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
 	"github.com/majori/wrc-laptimer/web"
@@ -123,6 +124,15 @@ func main() {
 				return
 			}
 		})
+
+		// Add series creation endpoint
+		mux.HandleFunc("/api/admin/series/create", httpHandlers.CreateSeriesHandler(db))
+		mux.HandleFunc("/api/admin/series/{id}/start", httpHandlers.StartSeriesHandler(db))
+		mux.HandleFunc("/api/admin/series/{id}/end", httpHandlers.EndSeriesHandler(db))
+
+		mux.HandleFunc("/api/admin/events/create", httpHandlers.CreateEventHandler(db))
+		mux.HandleFunc("/api/admin/events/{id}/start", httpHandlers.StartEventHandler(db))
+		mux.HandleFunc("/api/admin/events/{id}/end", httpHandlers.EndEventHandler(db))
 
 		// Serve static files
 		staticHandler := http.FileServer(http.FS(web.GetWebFS()))

@@ -5,6 +5,7 @@ import (
 )
 
 var activeSessionID int
+var activeSessionVehicleClassID uint16
 
 func (d *Database) GetActiveSessionID() int {
 	return activeSessionID
@@ -12,6 +13,14 @@ func (d *Database) GetActiveSessionID() int {
 
 func (d *Database) setActiveSessionID(id int) {
 	activeSessionID = id
+}
+
+func (d *Database) GetActiveSessionVehicleClassID() uint16 {
+	return activeSessionVehicleClassID
+}
+
+func (d *Database) setActiveSessionVehicleClassID(id uint16) {
+	activeSessionVehicleClassID = id
 }
 
 func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
@@ -37,6 +46,7 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 	}
 
 	d.setActiveSessionID(sessionID)
+	d.setActiveSessionVehicleClassID(pkt.VehicleClassID)
 
 	return nil
 }
@@ -50,20 +60,28 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 	if err != nil {
 		return err
 	}
+
+	eventID, err := d.GetActiveEventID(int16(activeSessionVehicleClassID))
+	if err != nil {
+		return err
+	}
+
 	_, err = d.db.ExecContext(d.ctx, `
 		UPDATE sessions
 		SET user_id = ?,
+			race_event_id = ?,
 			stage_result_status = ?,
 			stage_result_time = ?,
 			stage_result_time_penalty = ?
 		WHERE id = ?;
-	`, userID, pkt.StageResultStatus, pkt.StageResultTime, pkt.StageResultTimePenalty, activeSessionID)
+	`, userID, eventID, pkt.StageResultStatus, pkt.StageResultTime, pkt.StageResultTimePenalty, activeSessionID)
 	if err != nil {
 		return err
 	}
 
 	// Reset active session
 	d.setActiveSessionID(0)
+	d.setActiveSessionVehicleClassID(0)
 
 	return nil
 }
