@@ -4,83 +4,180 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>WRC Laptimer</title>
     <link rel="stylesheet" href="styles.css" />
-
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400;1,500;1,700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="index.js" type="module"></script>
     <script
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
     ></script>
   </head>
   <body>
-    <aside>
-      <div>
-        <h1>Laptimes</h1>
-        <table>
-          <thead>
-            <tr>
-              <th>Position</th>
-              <th>Name</th>
-              <th>Time</th>
-              <th>Diff</th>
-            </tr>
-          </thead>
-          <tbody x-data>
-            <template
-              x-for="laptime in $store.laptimer.laptimes"
-              :key="laptime.position"
-            >
-              <tr>
-                <td x-text="laptime.position"></td>
-                <td x-text="laptime.name"></td>
-                <td x-text="laptime.time"></td>
-                <td x-text="laptime.diff"></td>
-              </tr>
-            </template>
-          </tbody>
-        </table>
-      </div>
-      <div x-data>
-        <h1>Event information</h1>
-        <p x-text="'Event: ' + $store.event.name"></p>
-        <p x-text="'Class: ' + $store.event.class"></p>
-        <p x-text="'Car: ' + $store.event.car"></p>
-        <p x-text="'Stage: ' + $store.event.stage"></p>
-        <p x-text="'Location: ' + $store.event.location"></p>
-      </div>
-    </aside>
+    <div class="app">
+      <div class="bg-image"></div>
+      <div x-data class="main">
+        <!-- Current Driver Section -->
+        <header class="current-driver">
+          <span class="label">Current Driver:</span>
+          <span
+            x-data
+            x-text="$store.currentDriver.name"
+            class="driver-name"
+          ></span>
+        </header>
 
-    <script>
-      document.addEventListener("alpine:init", () => {
-        Alpine.store("laptimer", {
-          laptimes: [
-            {
-              position: 1,
-              name: "Andy Rockhill",
-              time: "1:23.456",
-              diff: "0.000",
-            },
-            {
-              position: 2,
-              name: "Mark Firehill",
-              time: "1:24.567",
-              diff: "+1.111",
-            },
-            {
-              position: 3,
-              name: "Axel Crash",
-              time: "DNF",
-              diff: "-",
-            },
-          ],
-        });
+        <!-- Event Info Section -->
+        <div class="vertical-split">
+          <div id="stage-results">
+            <div class="event-header">
+              <h1>Leaderboard</h1>
+            </div>
+            <div x-data="controller" class="event-info">
+              <div class="event-details">
+                <div class="date-box">
+                  <span class="btn prev" @click="changeDay(-1)"><</span>
+                  <span class="stage-date" x-text="$store.event.date"></span>
+                  <span class="btn next" @click="changeDay(1)">></span>
+                </div>
+                <div class="stage-info">
+                  <span x-text="$store.event.stage"></span> -
+                  <span x-text="$store.event.location"></span>
+                  <span class="car-class">
+                    <span class="car-car" x-text="$store.event.car"></span>
+                    <span x-text="$store.event.class"></span>
+                  </span>
+                  <span
+                    class="dropdown-toggle"
+                    @click="showDropdown = !showDropdown"
+                  >
+                    +
+                  </span>
+                </div>
+                <div
+                  class="stage-vehicle-dropdown"
+                  x-show="showDropdown"
+                  style="margin-top: 10px"
+                >
+                  <label for="stage-vehicle">Stage + Vehicle:</label>
+                  <select
+                    id="stage-vehicle"
+                    @change="updateStageVehicle($event.target.value)"
+                  >
+                    <template
+                      x-for="option in $store.state.stageVehicleOptions"
+                      :key="`${option.routeId}+${option.vehicleId}`"
+                    >
+                      <option
+                        :value="`${option.routeId}+${option.vehicleId}`"
+                        x-text="`Stage ${option.routeId} + Vehicle ${option.vehicleId}`"
+                      ></option>
+                    </template>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <table class="leaderboard">
+              <thead>
+                <tr>
+                  <th>POS.</th>
+                  <th>Driver</th>
+                  <th>Tries</th>
+                  <th>Time</th>
+                  <th>Diff</th>
+                </tr>
+              </thead>
+              <tbody x-data="controller">
+                <template
+                  x-for="(laptime, index) in $store.laptimer.laptimes"
+                  :key="laptime.position"
+                >
+                  <tr
+                    :class="index === $store.laptimer.latestDriveIndex ? 'highlight' : ''"
+                    @click="showDriverAttempts(laptime.name)"
+                    style="cursor: pointer"
+                  >
+                    <td x-text="laptime.position"></td>
+                    <td x-text="laptime.name"></td>
+                    <td x-text="laptime.attempts"></td>
+                    <td x-text="laptime.time"></td>
+                    <td x-text="laptime.diff"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
 
-        Alpine.store("event", {
-          name: "Kat-Metal Asfaltti JM",
-          class: "Jokamiehenluokka",
-          car: "Volkswagen Beetle",
-          stage: "Stage 1",
-          location: "Skutsi",
-        });
-      });
-    </script>
+          <div id="championship-results">
+            <div class="event-header">
+              <h1>Championship</h1>
+            </div>
+            <div x-data="controller" class="championship-info">
+              <div class="event-details">
+                <div class="championship-title">
+                  <span> Standings</span>
+                </div>
+              </div>
+            </div>
+
+            <table class="leaderboard">
+              <thead>
+                <tr>
+                  <th>POS.</th>
+                  <th>Driver</th>
+                  <th>Pts</th>
+                </tr>
+              </thead>
+              <tbody x-data="controller">
+                <template
+                  x-for="(standing, index) in $store.championship.standings"
+                  :key="standing.position"
+                >
+                  <tr>
+                    <td x-text="standing.position"></td>
+                    <td x-text="standing.name"></td>
+                    <td x-text="standing.points"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Modal for Driver Attempts -->
+        <div x-data="controller" class="modal">
+          <div class="modal-content">
+            <h2
+              x-text="`${$store.driverAttempts.selectedDriver}'s Attempts`"
+            ></h2>
+            <table class="driver-attempts">
+              <thead>
+                <tr>
+                  <th>Attempt #</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template
+                  x-for="(attempt, index) in $store.driverAttempts.driverAttempts"
+                  :key="index"
+                >
+                  <tr>
+                    <td x-text="index + 1"></td>
+                    <td x-text="attempt.time"></td>
+                    <td x-text="attempt.status"></td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+            <button x-data="controller" @click="closeModal()">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </body>
 </html>
