@@ -62,7 +62,7 @@ func (d *Database) StartSeries(id int) error {
 	if err != nil {
 		return fmt.Errorf("could not start series: %w", err)
 	}
-	activeSeriesID = sql.NullInt64{Int64: int64(id), Valid: true}
+	activeSeriesID = sql.NullInt32{Int32: int32(id), Valid: true}
 	return nil
 }
 
@@ -77,7 +77,7 @@ func (d *Database) EndSeries(id int) error {
 		return fmt.Errorf("could not end series: %w", err)
 	}
 	// TODO Loop through all series Events and close those
-	activeSeriesID = sql.NullInt64{}
+	activeSeriesID = sql.NullInt32{}
 	return nil
 }
 
