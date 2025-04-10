@@ -41,15 +41,18 @@ func (d *Database) GetActiveSeriesID() (sql.NullInt64, error) {
 	return activeSeriesID, nil
 }
 
-func (d *Database) CreateSeries(name string, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) error {
-	_, err := d.db.ExecContext(d.ctx, `
+func (d *Database) CreateSeries(name string, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) (int, error) {
+	var id int
+	err := d.db.QueryRowContext(d.ctx, `
 		INSERT INTO race_series (name, vehicle_id, vehicle_class_id)
-		VALUES (?, ?, ?);
-	`, name, vehicleID, vehicleClassID)
+		VALUES (?, ?, ?)
+		RETURNING id;
+	`, name, vehicleID, vehicleClassID).Scan(&id)
 	if err != nil {
-		return fmt.Errorf("could not create series: %w", err)
+		return 0, fmt.Errorf("could not create series: %w", err)
 	}
-	return nil
+
+	return id, nil
 }
 
 func (d *Database) StartSeries(id int) error {

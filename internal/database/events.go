@@ -38,16 +38,18 @@ func (d *Database) GetActiveEventID() (sql.NullInt64, error) {
 	activeEventID = eventID
 	return activeEventID, nil
 }
-func (d *Database) CreateEvent(name string, seriesID int, locationID sql.NullInt16, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) error {
+func (d *Database) CreateEvent(name string, seriesID int, locationID sql.NullInt16, vehicleID sql.NullInt16, vehicleClassID sql.NullInt16) (int, error) {
 	query := `
 		INSERT INTO race_events (name, race_series_id, location_id, vehicle_id, vehicle_class_id, active, created_at)
 		VALUES (?, ?, ?, ?, ?, FALSE, CURRENT_TIMESTAMP)
+		RETURNING id
 	`
-	_, err := d.db.Exec(query, name, seriesID, locationID, vehicleID, vehicleClassID)
+	var eventID int
+	err := d.db.QueryRow(query, name, seriesID, locationID, vehicleID, vehicleClassID).Scan(&eventID)
 	if err != nil {
-		return fmt.Errorf("failed to create event: %w", err)
+		return 0, fmt.Errorf("failed to create event: %w", err)
 	}
-	return nil
+	return eventID, nil
 }
 
 func (d *Database) StartEvent(id int) error {
