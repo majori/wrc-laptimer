@@ -16,9 +16,9 @@ type RaceSerie struct {
 }
 
 // Cache the activeSeriedID for quicker usage
-var activeSeriesID sql.NullInt64
+var activeSeriesID sql.NullInt32
 
-func (d *Database) GetActiveSeriesID() (sql.NullInt64, error) {
+func (d *Database) GetActiveSeriesID() (sql.NullInt32, error) {
 	if !activeSeriesID.Valid {
 		var id int
 		err := d.db.QueryRowContext(d.ctx, `
@@ -30,12 +30,11 @@ func (d *Database) GetActiveSeriesID() (sql.NullInt64, error) {
 		`).Scan(&id)
 		if err != nil {
 			if err == sql.ErrNoRows {
-				return sql.NullInt64{}, nil // No active series
+				return sql.NullInt32{}, nil // No active series
 			}
-			return sql.NullInt64{}, fmt.Errorf("could not get active series: %w", err)
+			return sql.NullInt32{}, fmt.Errorf("could not get active series: %w", err)
 		}
-		activeSeriesID = sql.NullInt64{Int64: int64(id), Valid: true}
-		return activeSeriesID, nil
+		activeSeriesID = sql.NullInt32{Int32: int32(id), Valid: true}
 	}
 	return activeSeriesID, nil
 }
