@@ -23,7 +23,7 @@ async function getNameById(
   try {
     const queryPayload = `SELECT name FROM ${tableName} WHERE ${idColumn} = ${id}`;
     const data = await postQuery(queryPayload);
-    return data[0]?.name || defaultValue;
+    return data[0]?.name ?? defaultValue;
   } catch (error) {
     console.error(`Error fetching name from ${tableName}:`, error);
     return defaultValue;
@@ -90,7 +90,7 @@ export async function getCurrentDriver() {
               ORDER BY user_logins.timestamp DESC
               LIMIT 1;`;
     const data = await postQuery(queryPayload);
-    return data[0]?.user_name || "N/A";
+    return data[0]?.user_name ?? "N/A";
   } catch (error) {
     console.error("Error fetching current driver:", error);
     return "N/A";
