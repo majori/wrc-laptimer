@@ -6,14 +6,14 @@ import (
 )
 
 type RaceSeries struct {
-	ID             int    `db:"id"`
-	Name           string `db:"name"`
-	VehicleID      uint16 `db:"vehicle_id"`
-	VehicleClassID uint16 `db:"vehicle_class_id"`
-	Active         bool   `db:"active"`
-	CreatedAt      string `db:"created_at"`
-	StartedAt      string `db:"started_at"`
-	EndedAt        string `db:"ended_at"`
+	ID             int           `db:"id"`
+	Name           string        `db:"name"`
+	VehicleID      sql.NullInt16 `db:"vehicle_id"`
+	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
+	Active         bool          `db:"active"`
+	CreatedAt      sql.NullTime  `db:"created_at"`
+	StartedAt      sql.NullTime  `db:"started_at"`
+	EndedAt        sql.NullTime  `db:"ended_at"`
 }
 
 // Cache the activeSeriedID for quicker usage
@@ -107,4 +107,38 @@ func (d *Database) GetSeries(id int) (*RaceSeries, error) {
 		return nil, fmt.Errorf("could not get series: %w", err)
 	}
 	return &series, nil
+}
+
+func (d *Database) GetAllSeries() ([]*RaceSeries, error) {
+	var series []*RaceSeries
+	rows, err := d.db.QueryContext(d.ctx, `
+		SELECT id, name, vehicle_id, vehicle_class_id, active, created_at, started_at, ended_at
+		FROM race_series
+	`)
+	if err != nil {
+		return nil, fmt.Errorf("could not get series: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var s RaceSeries
+		err := rows.Scan(
+			&s.ID,
+			&s.Name,
+			&s.VehicleID,
+			&s.VehicleClassID,
+			&s.Active,
+			&s.CreatedAt,
+			&s.StartedAt,
+			&s.EndedAt,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("could not scan series: %w", err)
+		}
+		series = append(series, &s)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating over rows: %w", err)
+	}
+	return series, nil
 }

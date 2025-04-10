@@ -128,11 +128,11 @@ func main() {
 		// Add series creation endpoint
 		mux.HandleFunc("/api/admin/series/create", handlers.CreateSeriesHandler(db))
 		mux.HandleFunc("/api/admin/series/{id}/start", handlers.StartSeriesHandler(db))
-		mux.HandleFunc("/api/admin/series/{id}end", handlers.EndSeriesHandler(db))
+		mux.HandleFunc("/api/admin/series/{id}/end", handlers.EndSeriesHandler(db))
 
-		mux.HandleFunc("/api/admin/event/create", handlers.CreateEventHandler(db))
-		mux.HandleFunc("/api/admin/event/{id}/start", handlers.StartEventHandler(db))
-		mux.HandleFunc("/api/admin/event/{id}end", handlers.EndEventHandler(db))
+		mux.HandleFunc("/api/admin/events/create", handlers.CreateEventHandler(db))
+		mux.HandleFunc("/api/admin/events/{id}/start", handlers.StartEventHandler(db))
+		mux.HandleFunc("/api/admin/events/{id}/end", handlers.EndEventHandler(db))
 
 		// Serve static files
 		staticHandler := http.FileServer(http.FS(web.GetWebFS()))

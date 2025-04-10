@@ -6,16 +6,16 @@ import (
 )
 
 type RaceEvent struct {
-	ID             int    `db:"id"`
-	RaceSeriesID   int    `db:"race_series_id"`
-	LocationID     uint16 `db:"location_id"`
-	Name           string `db:"name"`
-	CreatedAt      string `db:"created_at"`
-	VehicleID      uint16 `db:"vehicle_id"`
-	VehicleClassID uint16 `db:"vehicle_class_id"`
-	Active         bool   `db:"active"`
-	StartedAt      string `db:"started_at"`
-	EndedAt        string `db:"ended_at"`
+	ID             int           `db:"id"`
+	RaceSeriesID   sql.NullInt64 `db:"race_series_id"`
+	LocationID     sql.NullInt16 `db:"location_id"`
+	Name           string        `db:"name"`
+	CreatedAt      sql.NullTime  `db:"created_at"`
+	VehicleID      sql.NullInt16 `db:"vehicle_id"`
+	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
+	Active         bool          `db:"active"`
+	StartedAt      sql.NullTime  `db:"started_at"`
+	EndedAt        sql.NullTime  `db:"ended_at"`
 }
 
 var activeEventID sql.NullInt64 // Zero means no active event
