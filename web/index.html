@@ -17,7 +17,7 @@
     ></script>
   </head>
   <body>
-    <aside>
+    <div class="app">
       <div class="bg-image"></div>
       <div x-data class="main">
         <!-- Current Driver Section -->
@@ -84,29 +84,8 @@
         </table>
 
         <!-- Modal for Driver Attempts -->
-        <div
-          x-data="controller"
-          class="modal"
-          style="
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-          "
-        >
-          <div
-            class="modal-content"
-            style="
-              background: #333;
-              margin: 10% auto;
-              padding: 20px;
-              width: 50%;
-              border-radius: 8px;
-            "
-          >
+        <div x-data="controller" class="modal">
+          <div class="modal-content">
             <h2
               x-text="`${$store.driverAttempts.selectedDriver}'s Attempts`"
             ></h2>
@@ -135,6 +114,6 @@
           </div>
         </div>
       </div>
-    </aside>
+    </div>
   </body>
 </html>

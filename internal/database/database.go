@@ -67,7 +67,7 @@ func (d *Database) Close() {
 }
 
 func (d *Database) ExecuteSelectQuery(query string) (string, error) {
-	var result sql.NullString
+	var result string
 	err := d.db.QueryRowContext(d.ctx, `
         SELECT COALESCE(CAST(to_json(list(t)) AS VARCHAR), '[]') 
         FROM (SELECT * FROM json_execute_serialized_sql(json_serialize_sql(?::STRING))) t
@@ -75,7 +75,5 @@ func (d *Database) ExecuteSelectQuery(query string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	// Return the string value if valid, otherwise return an empty string
-	return result.String, nil
+	return result, nil
 }

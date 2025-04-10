@@ -63,8 +63,10 @@ export async function getSessionsByDay(date) {
     const endOfDay = `${date} 23:59:59`;
     const queryPayload = `SELECT sessions.user_id, users.name AS user_name, 
                     sessions.stage_result_time AS time,
-                    sessions.route_id, sessions.location_id, 
-                    sessions.vehicle_id, sessions.vehicle_manufacturer_id, 
+                    sessions.route_id,
+                    sessions.location_id, 
+                    sessions.vehicle_id,
+                    sessions.vehicle_manufacturer_id, 
                     sessions.vehicle_class_id,
                     sessions.stage_result_status
             FROM sessions 

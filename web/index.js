@@ -115,9 +115,9 @@ document.addEventListener("alpine:init", () => {
       const trackCounts = {};
       const carClassCounts = {};
       data.forEach((item) => {
-        trackCounts[item.route_id] = (trackCounts[item.route_id] || 0) + 1;
+        trackCounts[item.route_id] = (trackCounts[item.route_id] ?? 0) + 1;
         carClassCounts[item.vehicle_class_id] =
-          (carClassCounts[item.vehicle_class_id] || 0) + 1;
+          (carClassCounts[item.vehicle_class_id] ?? 0) + 1;
       });
 
       const mainTrackId = Object.keys(trackCounts).reduce((a, b) =>
@@ -196,7 +196,7 @@ document.addEventListener("alpine:init", () => {
           return a.rawTime - b.rawTime;
         });
 
-      const fastestTime = laptimes[0]?.rawTime || 0;
+      const fastestTime = laptimes[0]?.rawTime ?? 0;
       laptimes.forEach((laptime, index) => {
         laptime.position = index + 1;
         laptime.diff =
