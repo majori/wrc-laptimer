@@ -5,6 +5,7 @@ import (
 )
 
 var activeSessionID int
+var activeSessionVehicleClassID uint16
 
 func (d *Database) GetActiveSessionID() int {
 	return activeSessionID
@@ -12,6 +13,14 @@ func (d *Database) GetActiveSessionID() int {
 
 func (d *Database) setActiveSessionID(id int) {
 	activeSessionID = id
+}
+
+func (d *Database) GetActiveSessionVehicleClassID() uint16 {
+	return activeSessionVehicleClassID
+}
+
+func (d *Database) setActiveSessionVehicleClassID(id uint16) {
+	activeSessionVehicleClassID = id
 }
 
 func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
@@ -37,6 +46,7 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 	}
 
 	d.setActiveSessionID(sessionID)
+	d.setActiveSessionVehicleClassID(pkt.VehicleClassID)
 
 	return nil
 }
@@ -51,7 +61,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 		return err
 	}
 
-	eventID, err := d.GetActiveEventID()
+	eventID, err := d.GetActiveEventID(int16(activeSessionVehicleClassID))
 	if err != nil {
 		return err
 	}
@@ -71,6 +81,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 
 	// Reset active session
 	d.setActiveSessionID(0)
+	d.setActiveSessionVehicleClassID(0)
 
 	return nil
 }

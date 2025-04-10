@@ -119,9 +119,9 @@ func CreateEventHandler(db *database.Database) http.HandlerFunc {
 			return
 		}
 
-		var seriesID sql.NullInt64
+		var seriesID sql.NullInt32
 		if req.RaceSeriesID != nil {
-			seriesID = sql.NullInt64{Int64: int64(*req.RaceSeriesID), Valid: true}
+			seriesID = sql.NullInt32{Int32: int32(*req.RaceSeriesID), Valid: true}
 		}
 
 		// Convert nullable fields to sql.NullInt16
@@ -166,7 +166,7 @@ func StartEventHandler(db *database.Database) http.HandlerFunc {
 		}
 
 		// Extract the event ID from the URL path
-		eventID, err := parseIDFromPath(r, "/api/admin/event/", "/start")
+		eventID, err := parseIDFromPath(r, "/api/admin/events/", "/start")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
@@ -198,7 +198,7 @@ func EndEventHandler(db *database.Database) http.HandlerFunc {
 		}
 
 		// Extract the event ID from the URL path
-		eventID, err := parseIDFromPath(r, "/api/admin/event/", "/end")
+		eventID, err := parseIDFromPath(r, "/api/admin/events/", "/end")
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

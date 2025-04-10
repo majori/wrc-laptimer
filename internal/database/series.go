@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type RaceSeries struct {
+type RaceSerie struct {
 	ID             int           `db:"id"`
 	Name           string        `db:"name"`
 	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
@@ -82,8 +82,8 @@ func (d *Database) EndSeries(id int) error {
 	return nil
 }
 
-func (d *Database) GetSeries(id int) (*RaceSeries, error) {
-	var series RaceSeries
+func (d *Database) GetSeries(id int) (*RaceSerie, error) {
+	var series RaceSerie
 	err := d.db.QueryRowContext(d.ctx, `
 		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_series
@@ -106,8 +106,8 @@ func (d *Database) GetSeries(id int) (*RaceSeries, error) {
 	return &series, nil
 }
 
-func (d *Database) GetAllSeries() ([]*RaceSeries, error) {
-	var series []*RaceSeries
+func (d *Database) GetAllSeries() ([]*RaceSerie, error) {
+	var series []*RaceSerie
 	rows, err := d.db.QueryContext(d.ctx, `
 		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
 		FROM race_series
@@ -122,7 +122,7 @@ func (d *Database) GetAllSeries() ([]*RaceSeries, error) {
 	}()
 
 	for rows.Next() {
-		var s RaceSeries
+		var s RaceSerie
 		err := rows.Scan(
 			&s.ID,
 			&s.Name,
