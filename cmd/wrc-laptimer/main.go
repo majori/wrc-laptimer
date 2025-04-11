@@ -87,8 +87,9 @@ func main() {
 
 	go db.ListenForUserLogins(cardEvents)
 
-	// Setup HTTP server
 	go http.StartHTTPServer(db, config.ListenHTTP)
 
-	events.ProcessTelemetryEvents(ctx, db, packetCh)
+	go events.ProcessTelemetryEvents(ctx, db, packetCh)
+
+	<-ctx.Done()
 }

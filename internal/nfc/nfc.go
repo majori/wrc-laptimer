@@ -4,7 +4,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
-	"log"
+	"log/slog"
 
 	"github.com/peterhellberg/acr122u"
 )
@@ -17,8 +17,9 @@ func ListenForCardEvents(ctx context.Context, events chan<- string) error {
 	//nolint:errcheck
 	defer readerCtx.Release()
 
-	log.Println("ready for smartcard events")
+	slog.Info("listening smartcard events")
 	return readerCtx.ServeFunc(func(c acr122u.Card) {
+		// Hash the UID of the card before sending it to the channel
 		hasher := sha256.New()
 		hasher.Write(c.UID())
 
