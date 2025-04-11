@@ -62,18 +62,18 @@
                   x-show="showDropdown"
                   style="margin-top: 10px"
                 >
-                  <label for="stage-vehicle">Stage + Vehicle:</label>
+                  <label for="stage-vehicle">Stage + Car Class:</label>
                   <select
                     id="stage-vehicle"
                     @change="updateStageVehicle($event.target.value)"
                   >
                     <template
                       x-for="option in $store.state.stageVehicleOptions"
-                      :key="`${option.routeId}+${option.vehicleId}`"
+                      :key="`${option.routeId}+${option.vehicleClassId}`"
                     >
                       <option
-                        :value="`${option.routeId}+${option.vehicleId}`"
-                        x-text="`Stage ${option.routeId} + Vehicle ${option.vehicleId}`"
+                        :value="`${option.routeId}+${option.vehicleClassId}`"
+                        x-text="`Stage ${option.routeId} + Class ${option.vehicleClassId}`"
                       ></option>
                     </template>
                   </select>
@@ -85,6 +85,8 @@
                 <tr>
                   <th>POS.</th>
                   <th>Driver</th>
+                  <th>Car</th>
+                  <th>Class</th>
                   <th>Tries</th>
                   <th>Time</th>
                   <th>Diff</th>
@@ -102,6 +104,8 @@
                   >
                     <td x-text="laptime.position"></td>
                     <td x-text="laptime.name"></td>
+                    <td x-text="laptime.vehicle"></td>
+                    <td x-text="laptime.class"></td>
                     <td x-text="laptime.attempts"></td>
                     <td x-text="laptime.time"></td>
                     <td x-text="laptime.diff"></td>
@@ -158,6 +162,8 @@
                 <tr>
                   <th>Attempt #</th>
                   <th>Time</th>
+                  <th>Car</th>
+                  <th>Class</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -169,6 +175,8 @@
                   <tr>
                     <td x-text="index + 1"></td>
                     <td x-text="attempt.time"></td>
+                    <td x-text="attempt.car"></td>
+                    <td x-text="attempt.class"></td>
                     <td x-text="attempt.status"></td>
                   </tr>
                 </template>

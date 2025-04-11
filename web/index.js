@@ -65,6 +65,8 @@ document.addEventListener("alpine:init", () => {
                   ? formatTime(attempt.time)
                   : "DNF",
               status: attempt.stage_result_status === 1 ? "Completed" : "DNF",
+              car: attempt.vehicle_name || "-",
+              class: attempt.vehicle_class_id || "-",
             }));
           resolve(attempts);
         }
@@ -138,10 +140,10 @@ document.addEventListener("alpine:init", () => {
         return;
       }
 
-      // Group sessions by stage and vehicle combinations
+      // Group sessions by stage and vehicle class combinations
       const stageVehicleMap = {};
       data.forEach((item) => {
-        const key = `${item.route_id}+${item.vehicle_id}`;
+        const key = `${item.route_id}+${item.vehicle_class_id}`; // Use routeId + vehicleClassId
         if (!stageVehicleMap[key]) {
           stageVehicleMap[key] = [];
         }
@@ -150,12 +152,12 @@ document.addEventListener("alpine:init", () => {
 
       // Populate dropdown options
       const stageVehicleOptions = Object.keys(stageVehicleMap).map((key) => {
-        const [routeId, vehicleId] = key.split("+");
-        return { routeId, vehicleId };
+        const [routeId, vehicleClassId] = key.split("+");
+        return { routeId, vehicleClassId }; // Include vehicleClassId in the options
       });
       Alpine.store("state").stageVehicleOptions = stageVehicleOptions;
 
-      // Use the selected stage and vehicle combo if available
+      // Use the selected stage and vehicle class combo if available
       let selectedKey = Alpine.store("state").selectedStageVehicle;
       if (!selectedKey) {
         // Default to the most recent session if no combo is selected
@@ -164,36 +166,30 @@ document.addEventListener("alpine:init", () => {
             ? session
             : latest
         );
-        selectedKey = `${mostRecentSession.route_id}+${mostRecentSession.vehicle_id}`;
+        selectedKey = `${mostRecentSession.route_id}+${mostRecentSession.vehicle_class_id}`;
         Alpine.store("state").selectedStageVehicle = selectedKey;
       }
 
-      const [routeId, vehicleId] = selectedKey.split("+");
+      const [routeId, vehicleClassId] = selectedKey.split("+");
 
       // Fetch event info for the selected session
       const routeName = await getRouteName(routeId);
       const locationName = await getLocationName(
         stageVehicleMap[selectedKey][0]?.location_id
       );
-      const carName = await getVehicleName(vehicleId);
-      const manufacturerName = await getManufacturerName(
-        stageVehicleMap[selectedKey][0]?.vehicle_manufacturer_id
-      );
-      const className = await getClassName(
-        stageVehicleMap[selectedKey][0]?.vehicle_class_id
-      );
+      const className = await getClassName(vehicleClassId);
 
       // Update the event info
       Alpine.store("event", {
         class: className,
-        car: carName,
-        manufacturer: manufacturerName,
+        car: "-", // No specific car, as it's based on vehicle class
+        manufacturer: "-", // No specific manufacturer, as it's based on vehicle class
         date: formatDate(date),
         stage: routeName,
         location: locationName,
       });
 
-      // Filter sessions based on the selected stage and vehicle
+      // Filter sessions based on the selected stage and vehicle class
       const filteredData = stageVehicleMap[selectedKey];
 
       // Group laps by user and calculate fastest lap and total attempts
@@ -208,6 +204,8 @@ document.addEventListener("alpine:init", () => {
             fastestTime: item.stage_result_status === 1 ? time : Infinity,
             totalAttempts: 1,
             hasCompleted: item.stage_result_status === 1,
+            carClass: item.vehicle_class_name, // Use vehicle class name
+            vehicle: item.vehicle_name || "-", // Fallback to "-" if vehicle_name is empty
           };
         } else {
           if (item.stage_result_status === 1) {
@@ -221,6 +219,19 @@ document.addEventListener("alpine:init", () => {
         }
       });
 
+      // Fetch vehicle names if missing
+      for (const userId in userLaps) {
+        if (userLaps[userId].vehicle === "-") {
+          const vehicleId = filteredData.find(
+            (item) => item.user_id === userId
+          )?.vehicle_id;
+
+          if (vehicleId) {
+            userLaps[userId].vehicle = await getVehicleName(vehicleId);
+          }
+        }
+      }
+
       const laptimes = Object.values(userLaps)
         .filter((user) => user.hasCompleted || user.fastestTime === Infinity) // Include DNF only if no completed runs
         .map((user, index) => ({
@@ -233,6 +244,8 @@ document.addEventListener("alpine:init", () => {
           rawTime: user.fastestTime,
           diff: "",
           attempts: user.totalAttempts,
+          carClass: user.carClass, // Include carClass in the laptime object
+          vehicle: user.vehicle, // Include the specific car used
         }))
         .sort((a, b) => {
           if (a.rawTime === Infinity) return 1; // Place DNF at the bottom
@@ -248,7 +261,7 @@ document.addEventListener("alpine:init", () => {
             ? `+${formatTime(laptime.rawTime - fastestTime)}`
             : "";
       });
-
+      console.log("laptimes", laptimes);
       Alpine.store("laptimer").laptimes = laptimes;
     } catch (error) {
       console.error("Error parsing sessions:", error);

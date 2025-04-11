@@ -68,9 +68,11 @@ export async function getSessionsByDay(date) {
                     sessions.vehicle_id,
                     sessions.vehicle_manufacturer_id, 
                     sessions.vehicle_class_id,
+                    vehicles.name AS vehicle_name,
                     sessions.stage_result_status
             FROM sessions 
             JOIN users ON sessions.user_id = users.id 
+            JOIN vehicles ON sessions.vehicle_id = vehicles.id
             WHERE sessions.started_at BETWEEN '${startOfDay}' AND '${endOfDay}'`;
 
     const data = await postQuery(queryPayload);
