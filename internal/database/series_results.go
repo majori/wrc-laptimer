@@ -157,12 +157,12 @@ func (d *Database) CalculateSeriesResults(seriesID int, eventResults []Result, p
 func (d *Database) CalculateAndStoreSerie(seriesID int) error {
 	// Get all results for the series
 
-	serie, err := d.GetSeries(seriesID)
+	series, err := d.GetSeries(seriesID)
 	if err != nil {
 		return fmt.Errorf("failed to get series: %w", err)
 	}
 
-	pointScale, err := d.parsePointScale(serie.PointScale)
+	pointScale, err := d.parsePointScale(series.PointScale)
 	if err != nil {
 		return fmt.Errorf("failed to parse point scale: %w", err)
 	}
