@@ -15,7 +15,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 				SELECT 1
 				FROM users
 				WHERE id = ?
-			);
+			)
 		`, id).Scan(&exists)
 		if err != nil {
 			slog.Error("error checking user existence", "error", err)
@@ -33,9 +33,9 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 
 		// Insert the user login into the database
 		_, err = d.db.ExecContext(d.ctx, `
-				INSERT INTO user_logins (user_id) 
-				VALUES (?);
-			`, id)
+			INSERT INTO user_logins (user_id) 
+			VALUES (?)
+		`, id)
 		if err != nil {
 			slog.Error("error inserting user login", "error", err)
 		}
