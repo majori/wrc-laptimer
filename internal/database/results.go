@@ -173,6 +173,7 @@ func (d *Database) CalculateAndStoreEventResults(eventID int) error {
 		return fmt.Errorf("failed to get first sessions: %w", err)
 	}
 
+	// Calculate both best and first session points
 	var bestSessionPoints = calculatePoints(bestSessions, pointScale, false)
 	var firstSessionPoints = calculatePoints((firstSessions), pointScale, true)
 
