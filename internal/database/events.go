@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	"fmt"
+	"time"
 )
 
 type RaceEvent struct {
@@ -14,7 +15,7 @@ type RaceEvent struct {
 	VehicleClassID sql.NullInt16  `db:"vehicle_class_id"`
 	Active         bool           `db:"active"`
 	PointScale     sql.NullString `db:"point_scale"`
-	CreatedAt      sql.NullTime   `db:"created_at"`
+	CreatedAt      time.Time      `db:"created_at"`
 	StartedAt      sql.NullTime   `db:"started_at"`
 	EndedAt        sql.NullTime   `db:"ended_at"`
 }

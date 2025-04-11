@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type Result struct {
-	ID          int          `db:"id"`
-	UserID      string       `db:"user_id"`
-	RaceEventID int          `db:"race_event_id"`
-	CreatedAt   sql.NullTime `db:"created_at"`
-	Points      int          `db:"points"`
-	HCMode      bool         `db:"hc_mode"`
-	Position    int          `db:"position"`
-	ResultTime  float32      `db:"result_time"`
+	ID          int       `db:"id"`
+	UserID      string    `db:"user_id"`
+	RaceEventID int       `db:"race_event_id"`
+	CreatedAt   time.Time `db:"created_at"`
+	Points      int       `db:"points"`
+	HCMode      bool      `db:"hc_mode"`
+	Position    int       `db:"position"`
+	ResultTime  float32   `db:"result_time"`
 }
 
 type SessionResult struct {
