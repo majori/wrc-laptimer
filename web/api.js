@@ -99,14 +99,10 @@ export async function getCurrentDriver() {
   }
 }
 
-export async function getChampionshipStandings() {
+export async function getChampionshipStandings(id) {
   try {
     const queryPayload = `
-      SELECT users.name AS user_name, points.user_id, points.points
-      FROM points
-      JOIN users ON points.user_id = users.id
-      ORDER BY points.points DESC;
-    `;
+     SELECT r.user_id, u.name, sum(r.points) as total_points FROM results r JOIN users u ON r.user_id = u.id WHERE r.hc_mode = true AND r.race_event_id=${id} GROUP BY r.user_id, u.name ORDER BY total_points DESC;`;
     const data = await postQuery(queryPayload);
     return data;
   } catch (error) {

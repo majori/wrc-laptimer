@@ -292,17 +292,30 @@ document.addEventListener("alpine:init", () => {
     return `${day}.${month}`;
   }
 
+  // Extract the "championship" parameter from the URL
+  const urlParams = new URLSearchParams(window.location.search);
+  const championshipId = urlParams.get("championship");
+
   // Initialize the page with today's date
   const today = new Date().toISOString().split("T")[0];
   Alpine.store("state").currentDate = today;
   fetchCurrentDriver();
   fetchSessionsForDay(today);
-  fetchChampionshipStandings();
 
+  // Fetch championship standings if the "championship" parameter exists
+  if (championshipId) {
+    fetchChampionshipStandings(championshipId);
+  }
+
+  // Set up periodic updates
   setInterval(() => {
     fetchCurrentDriver();
     fetchSessionsForDay(Alpine.store("state").currentDate);
-    fetchChampionshipStandings();
+
+    // Fetch championship standings only if the "championship" parameter exists
+    if (championshipId) {
+      fetchChampionshipStandings(championshipId);
+    }
   }, 5000);
 });
 
@@ -317,12 +330,15 @@ document.addEventListener("DOMContentLoaded", () => {
     if (championshipResults) {
       championshipResults.style.display = "block";
     }
+
+    // Fetch championship standings using the parameter
+    fetchChampionshipStandings(championshipId);
   }
 });
 
-async function fetchChampionshipStandings() {
+async function fetchChampionshipStandings(id) {
   try {
-    const standings = await getChampionshipStandings();
+    const standings = await getChampionshipStandings(id);
     Alpine.store("championship").standings = standings.map(
       (standing, index) => ({
         position: index + 1,
