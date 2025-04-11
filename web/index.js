@@ -261,7 +261,6 @@ document.addEventListener("alpine:init", () => {
             ? `+${formatTime(laptime.rawTime - fastestTime)}`
             : "";
       });
-      console.log("laptimes", laptimes);
       Alpine.store("laptimer").laptimes = laptimes;
     } catch (error) {
       console.error("Error parsing sessions:", error);
