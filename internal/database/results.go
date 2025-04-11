@@ -121,6 +121,7 @@ func calculatePoints(sessions []SessionResult, pointScale []int, HCMode bool) []
 	return results
 }
 
+// Store Event results
 func (d *Database) StoreResults(results []Result) error {
 	query := `
 		INSERT INTO results (user_id, race_event_id, created_at, points, hc_mode, position, result_time)
