@@ -36,7 +36,7 @@ func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
 			vehicle_manufacturer_id
 		)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id;
+		RETURNING id
 	`, pkt.GameMode, pkt.LocationID, pkt.RouteID, pkt.StageLength, pkt.StageShakedown, pkt.VehicleClassID, pkt.VehicleID, pkt.VehicleManufacturerID)
 
 	var sessionID int
@@ -73,7 +73,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 			stage_result_status = ?,
 			stage_result_time = ?,
 			stage_result_time_penalty = ?
-		WHERE id = ?;
+		WHERE id = ?
 	`, userID, eventID, pkt.StageResultStatus, pkt.StageResultTime, pkt.StageResultTimePenalty, activeSessionID)
 	if err != nil {
 		return err

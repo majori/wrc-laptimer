@@ -114,7 +114,14 @@ func (d *Database) GetSeries(id int) (*RaceSerie, error) {
 func (d *Database) GetAllSeries() ([]*RaceSerie, error) {
 	var series []*RaceSerie
 	rows, err := d.db.QueryContext(d.ctx, `
-		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
+		SELECT
+			id,
+			name,
+			vehicle_class_id,
+			active,
+			created_at,
+			started_at,
+			ended_at
 		FROM race_series
 	`)
 	if err != nil {

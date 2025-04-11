@@ -31,7 +31,6 @@ type SessionResult struct {
 } */
 
 func (d *Database) QuerySessionResults(eventID int, query string) ([]SessionResult, error) {
-
 	rows, err := d.db.Query(query, eventID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -75,7 +74,7 @@ func (d *Database) GetBestSessionsByEventID(eventID int) ([]SessionResult, error
 			user_id, race_event_id
 		ORDER BY 
 			stage_total_result ASC;
-		`
+	`
 
 	return d.QuerySessionResults(eventID, query)
 }
@@ -97,7 +96,7 @@ func (d *Database) GetFirstSessionsByEventID(eventID int) ([]SessionResult, erro
 			)
 		ORDER BY 
 			stage_total_result ASC;
-		`
+	`
 	return d.QuerySessionResults(eventID, query)
 }
 
@@ -176,7 +175,7 @@ func (d *Database) CalculateAndStoreEventResults(eventID int) error {
 
 	// Calculate both best and first session points
 	var bestSessionPoints = calculatePoints(bestSessions, pointScale, false)
-	var firstSessionPoints = calculatePoints((firstSessions), pointScale, true)
+	var firstSessionPoints = calculatePoints(firstSessions, pointScale, true)
 
 	if err := d.StoreResults(bestSessionPoints); err != nil {
 		return fmt.Errorf("failed to store best session points: %w", err)

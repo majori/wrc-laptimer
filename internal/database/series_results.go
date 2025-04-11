@@ -20,22 +20,19 @@ type SeriesResult struct {
 
 func (d *Database) GetResultsBySeriesID(seriesID int, HCMode bool) ([]Result, error) {
 	query := `
-        SELECT 
-            r.id,
-            r.user_id,
-            r.race_event_id,
-            r.created_at,
-            r.points,
-            r.hc_mode,
-            r.position,
-            r.result_time
-        FROM 
-            results r
-        JOIN 
-            race_events e ON r.race_event_id = e.id
-        WHERE 
-            e.race_series_id = ? AND r.hc_mode = ?;
-    `
+		SELECT 
+			r.id,
+			r.user_id,
+			r.race_event_id,
+			r.created_at,
+			r.points,
+			r.hc_mode,
+			r.position,
+			r.result_time
+		FROM results r
+		JOIN race_events e ON r.race_event_id = e.id
+		WHERE e.race_series_id = ? AND r.hc_mode = ?
+	`
 	rows, err := d.db.Query(query, seriesID, HCMode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
@@ -207,17 +204,17 @@ func (d *Database) CalculateAndStoreSerie(seriesID int) error {
 
 func (d *Database) StoreSeriesResult(result SeriesResult) error {
 	query := `
-        INSERT INTO series_results (
-            user_id,
-            race_series_id,
-            points,
-            race_count,
-            hc_mode,
-            position,
-            result_time,
-			created_at           
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW());
-    `
+		INSERT INTO series_results (
+			user_id,
+			race_series_id,
+			points,
+			race_count,
+			hc_mode,
+			position,
+			result_time,
+			created_at
+		) VALUES (?, ?, ?, ?, ?, ?, ?, NOW());
+	`
 	_, err := d.db.Exec(query,
 		result.UserID,
 		result.RaceSeriesID,

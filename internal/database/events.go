@@ -32,9 +32,14 @@ func (d *Database) GetActiveEventID(eventVehicleClassID int16) (sql.NullInt32, e
 		return activeEventID, nil
 	}
 
+	query := `
+		SELECT id, vehicle_class_id
+		FROM race_events
+		WHERE active = TRUE
+		ORDER BY started_at DESC LIMIT 1
+	`
 	var eventID sql.NullInt32
 	var vehicleClassID sql.NullInt16
-	query := "SELECT id, vehicle_class_id FROM race_events WHERE active = TRUE ORDER BY started_at DESC LIMIT 1"
 	err := d.db.QueryRow(query).Scan(&eventID, &vehicleClassID)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -63,10 +68,10 @@ func (d *Database) CreateEvent(name string, seriesID sql.NullInt32, locationID s
 
 func (d *Database) StartEvent(id int) error {
 	query := `
-			UPDATE race_events
-			SET active = TRUE, started_at = CURRENT_TIMESTAMP
-			WHERE id = ? AND active = FALSE
-		`
+		UPDATE race_events
+		SET active = TRUE, started_at = CURRENT_TIMESTAMP
+		WHERE id = ? AND active = FALSE
+	`
 	result, err := d.db.Exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to start event: %w", err)
@@ -121,7 +126,18 @@ func (d *Database) EndEvent(id int) error {
 
 func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 	query := `
-		SELECT id, name, race_series_id, location_id, route_id, vehicle_class_id, point_scale, active, created_at, started_at, ended_at
+		SELECT
+			id,
+			name,
+			race_series_id,
+			location_id,
+			route_id,
+			vehicle_class_id,
+			point_scale,
+			active,
+			created_at,
+			started_at,
+			ended_at
 		FROM race_events
 		WHERE race_series_id = ?
 		ORDER BY created_at DESC
@@ -167,7 +183,18 @@ func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 
 func (d *Database) GetEvent(id int) (*RaceEvent, error) {
 	query := `
-		SELECT id, name, race_series_id, location_id, route_id, vehicle_class_id, point_scale, active, created_at, started_at, ended_at
+		SELECT
+			id,
+			name,
+			race_series_id,
+			location_id,
+			route_id,
+			vehicle_class_id,
+			point_scale,
+			active,
+			created_at,
+			started_at,
+			ended_at
 		FROM race_events
 		WHERE id = ?
 	`
