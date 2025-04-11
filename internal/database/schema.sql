@@ -514,12 +514,14 @@ CREATE SEQUENCE IF NOT EXISTS race_series_id_sequence START 1;
 
 CREATE TABLE IF NOT EXISTS race_series (
   id                    INTEGER PRIMARY KEY DEFAULT nextval('race_series_id_sequence'),
+  parent_series         INTEGER REFERENCES race_series(id),
   name                  TEXT,
   vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
+  point_scale           TEXT,
   active                BOOLEAN DEFAULT false,
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   started_at            TIMESTAMP,
-  ended_at              TIMESTAMP
+  ended_at              TIMESTAMP,
 );
 
 CREATE SEQUENCE IF NOT EXISTS race_events_id_sequence START 1;
@@ -531,22 +533,39 @@ CREATE TABLE IF NOT EXISTS race_events (
   location_id           USMALLINT REFERENCES locations(id),
   route_id              USMALLINT,
   vehicle_class_id      USMALLINT REFERENCES vehicle_classes(id),
+  point_scale           TEXT,
   active                BOOLEAN DEFAULT false,
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   started_at            TIMESTAMP,
-  ended_at              TIMESTAMP
+  ended_at              TIMESTAMP,
 );
 
-CREATE SEQUENCE IF NOT EXISTS points_id_sequence START 1;
+CREATE SEQUENCE IF NOT EXISTS results_id_sequence START 1;
 
-CREATE TABLE IF NOT EXISTS points (
-  id                    INTEGER PRIMARY KEY DEFAULT nextval('points_id_sequence'),
+
+CREATE TABLE IF NOT EXISTS results (
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('results_id_sequence'),
   user_id               TEXT REFERENCES users(id),
   race_event_id         INTEGER REFERENCES race_events(id),
   created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   points                INTEGER,
   hc_mode               BOOLEAN,
-  position              INTEGER
+  position              INTEGER,
+  result_time           FLOAT,
+);
+
+CREATE SEQUENCE IF NOT EXISTS series_results_id_sequence START 1;
+
+CREATE TABLE IF NOT EXISTS series_results (
+  id                    INTEGER PRIMARY KEY DEFAULT nextval('series_results_id_sequence'),
+  user_id               TEXT REFERENCES users(id),
+  race_series_id        INTEGER REFERENCES race_series(id),
+  created_at            TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  points                INTEGER,
+  hc_mode               BOOLEAN, 
+  race_count            INTEGER,
+  position              INTEGER,
+  result_time           FLOAT,
 );
 
 CREATE SEQUENCE IF NOT EXISTS session_id_sequence START 1;

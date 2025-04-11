@@ -6,13 +6,14 @@ import (
 )
 
 type RaceSerie struct {
-	ID             int           `db:"id"`
-	Name           string        `db:"name"`
-	VehicleClassID sql.NullInt16 `db:"vehicle_class_id"`
-	Active         bool          `db:"active"`
-	CreatedAt      sql.NullTime  `db:"created_at"`
-	StartedAt      sql.NullTime  `db:"started_at"`
-	EndedAt        sql.NullTime  `db:"ended_at"`
+	ID             int            `db:"id"`
+	Name           string         `db:"name"`
+	VehicleClassID sql.NullInt16  `db:"vehicle_class_id"`
+	PointScale     sql.NullString `db:"point_scale"`
+	Active         bool           `db:"active"`
+	CreatedAt      sql.NullTime   `db:"created_at"`
+	StartedAt      sql.NullTime   `db:"started_at"`
+	EndedAt        sql.NullTime   `db:"ended_at"`
 }
 
 // Cache the activeSeriedID for quicker usage
@@ -76,7 +77,11 @@ func (d *Database) EndSeries(id int) error {
 	if err != nil {
 		return fmt.Errorf("could not end series: %w", err)
 	}
-	// TODO Loop through all series Events and close those
+
+	if err := d.CalculateAndStoreSerie(id); err != nil {
+		return fmt.Errorf("could not calculate and store series: %w", err)
+	}
+
 	activeSeriesID = sql.NullInt32{}
 	return nil
 }
@@ -84,13 +89,14 @@ func (d *Database) EndSeries(id int) error {
 func (d *Database) GetSeries(id int) (*RaceSerie, error) {
 	var series RaceSerie
 	err := d.db.QueryRowContext(d.ctx, `
-		SELECT id, name, vehicle_class_id, active, created_at, started_at, ended_at
+		SELECT id, name, vehicle_class_id, point_scale, active, created_at, started_at, ended_at
 		FROM race_series
 		WHERE id = ?;
 	`, id).Scan(
 		&series.ID,
 		&series.Name,
 		&series.VehicleClassID,
+		&series.PointScale,
 		&series.Active,
 		&series.CreatedAt,
 		&series.StartedAt,
