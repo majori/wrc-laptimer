@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log/slog"
+
+	"github.com/majori/wrc-laptimer/pkg/username"
 )
 
 func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
@@ -45,7 +47,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 }
 
 func (d *Database) CreateUser(id string) error {
-	name := id[:5] // TODO: Get a better placeholder name
+	name := username.GenerateFromSeed(id)
 	_, err := d.db.ExecContext(d.ctx, `
 		INSERT INTO users (id, name)
 		VALUES (?, ?)
