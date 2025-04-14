@@ -24,7 +24,7 @@ func generateTelemetry(size int, stageLength int) []*telemetry.TelemetrySessionU
 	telemetrySamples := make([]*telemetry.TelemetrySessionUpdate, size)
 	for i := 0; i < size; i++ {
 		telemetrySamples[i] = &telemetry.TelemetrySessionUpdate{
-			StageCurrentDistance: float64(stageLength / size) * float64(i),
+			StageCurrentDistance: float64(stageLength) / float64(size) * float64(i),
 			VehiclePositionX:     float32(i),
 			VehiclePositionY:     float32(i),
 			VehiclePositionZ:     float32(i),

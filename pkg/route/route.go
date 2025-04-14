@@ -109,6 +109,13 @@ type RoutePointDb interface {
 	SetRoutePoints(routeID int, routePoints []*database.RoutePoint) error
 }
 
+func getGearIndex(gearIndex uint8, gearIndexNeutral uint8, gearIndexReverse uint8) uint8 {
+	if gearIndex == gearIndexNeutral || gearIndex == gearIndexReverse {
+		return 0
+	}
+	return gearIndex
+}
+
 func UpdateRoutePoints(db RoutePointDb, routeID int, placement int) error {
 	if previousTelemetry == nil {
 		return nil
@@ -123,62 +130,81 @@ func UpdateRoutePoints(db RoutePointDb, routeID int, placement int) error {
 		return err
 	}
 
-	newSampleMult := 1.0 / (float32(placement) * 2.0)
-
-	oldSampleMult := float64(len(oldRoutePoints)) / float64(len(samples))
 	newRoutePoints := make([]*database.RoutePoint, len(samples))
-	for i := 0; i < len(samples); i++ {
-		prevSample := oldRoutePoints[int(math.Floor(float64(i) * oldSampleMult))]
-		nextSample := oldRoutePoints[int(math.Ceil(float64(i) * oldSampleMult))]
 
-		newRoutePoints[i] = &database.RoutePoint{
-			RouteID:         routeID,
-			StageDistance:   i * ROUTE_PATH_POINT_INTERVAL,
-			X:               (prevSample.X + nextSample.X) / 2.0,
-			Y:               (prevSample.Y + nextSample.Y) / 2.0,
-			Z:               (prevSample.Z + nextSample.Z) / 2.0,
-			AvgVelocity:     (prevSample.AvgVelocity + nextSample.AvgVelocity) / 2.0,
-			AvgAcceleration: (prevSample.AvgAcceleration + nextSample.AvgAcceleration) / 2.0,
-			AvgThrottle:     (prevSample.AvgThrottle + nextSample.AvgThrottle) / 2.0,
-			AvgRpm:          (prevSample.AvgRpm + nextSample.AvgRpm) / 2.0,
-			AvgBreaking:     (prevSample.AvgBreaking + nextSample.AvgBreaking) / 2.0,
-			AvgHandbreak:    (prevSample.AvgHandbreak + nextSample.AvgHandbreak) / 2.0,
-			AvgGear:         (prevSample.AvgGear + nextSample.AvgGear) / 2.0,
+	if (oldRoutePoints == nil) || (len(oldRoutePoints) == 0) {
+		for i := 0; i < len(samples); i++ {
+			newRoutePoints[i] = &database.RoutePoint{
+				RouteID:         routeID,
+				StageDistance:   i * ROUTE_PATH_POINT_INTERVAL,
+				X:               samples[i].VehiclePositionX,
+				Y:               samples[i].VehiclePositionY,
+				Z:               samples[i].VehiclePositionZ,
+				AvgVelocity:     getVectorLen(samples[i].VehicleVelocityX, samples[i].VehicleVelocityY, samples[i].VehicleVelocityZ),
+				AvgAcceleration: getVectorLen(samples[i].VehicleAccelerationX, samples[i].VehicleAccelerationY, samples[i].VehicleAccelerationZ),
+				AvgThrottle:     samples[i].VehicleThrottle,
+				AvgRpm:          samples[i].VehicleEngineRpmCurrent / samples[i].VehicleEngineRpmMax,
+				AvgBreaking:     samples[i].VehicleBrake,
+				AvgHandbreak:    samples[i].VehicleHandbrake,
+			}
+
+			gear := getGearIndex(samples[i].VehicleGearIndex, samples[i].VehicleGearIndexNeutral, samples[i].VehicleGearIndexReverse)
+			newRoutePoints[i].AvgGear = float32(gear) / float32(samples[i].VehicleGearMaximum)
 		}
+	} else {
+		newSampleMult := 1.0 / (float32(placement) * 2.0)
 
-		newRoutePoints[i].X = (1-newSampleMult) * newRoutePoints[i].X + newSampleMult * samples[i].VehiclePositionX
-		newRoutePoints[i].Y = (1-newSampleMult) * newRoutePoints[i].Y + newSampleMult * samples[i].VehiclePositionY
-		newRoutePoints[i].Z = (1-newSampleMult) * newRoutePoints[i].Z + newSampleMult * samples[i].VehiclePositionZ
-		newRoutePoints[i].AvgVelocity =
-			(1-newSampleMult) * newRoutePoints[i].AvgVelocity +
-			newSampleMult * getVectorLen(
-				samples[i].VehicleVelocityX,
-				samples[i].VehicleVelocityY,
-				samples[i].VehicleVelocityZ,
-			)
-		newRoutePoints[i].AvgAcceleration =
-			(1-newSampleMult) * newRoutePoints[i].AvgAcceleration +
-			newSampleMult * getVectorLen(
-				samples[i].VehicleAccelerationX,
-				samples[i].VehicleAccelerationY,
-				samples[i].VehicleAccelerationZ,
-			)
-		newRoutePoints[i].AvgThrottle = (1-newSampleMult) * newRoutePoints[i].AvgThrottle + newSampleMult * samples[i].VehicleThrottle
-		newRoutePoints[i].AvgRpm =
-			(1-newSampleMult) * newRoutePoints[i].AvgRpm +
-			newSampleMult * (samples[i].VehicleEngineRpmCurrent / samples[i].VehicleEngineRpmMax)
-		newRoutePoints[i].AvgBreaking = (1-newSampleMult) * newRoutePoints[i].AvgBreaking + newSampleMult * samples[i].VehicleBrake
-		newRoutePoints[i].AvgHandbreak = (1-newSampleMult) * newRoutePoints[i].AvgHandbreak + newSampleMult * samples[i].VehicleHandbrake
+		oldSampleMult := float64(len(oldRoutePoints)) / float64(len(samples))
 
-		gear := samples[i].VehicleGearIndex
-		if gear == samples[i].VehicleGearIndexNeutral || gear == samples[i].VehicleGearIndexReverse {
-			gear = 0
+		for i := 0; i < len(samples); i++ {
+			prevSample := oldRoutePoints[int(math.Floor(float64(i) * oldSampleMult))]
+			nextSample := oldRoutePoints[int(math.Ceil(float64(i) * oldSampleMult))]
+
+			newRoutePoints[i] = &database.RoutePoint{
+				RouteID:         routeID,
+				StageDistance:   i * ROUTE_PATH_POINT_INTERVAL,
+				X:               (prevSample.X + nextSample.X) / 2.0,
+				Y:               (prevSample.Y + nextSample.Y) / 2.0,
+				Z:               (prevSample.Z + nextSample.Z) / 2.0,
+				AvgVelocity:     (prevSample.AvgVelocity + nextSample.AvgVelocity) / 2.0,
+				AvgAcceleration: (prevSample.AvgAcceleration + nextSample.AvgAcceleration) / 2.0,
+				AvgThrottle:     (prevSample.AvgThrottle + nextSample.AvgThrottle) / 2.0,
+				AvgRpm:          (prevSample.AvgRpm + nextSample.AvgRpm) / 2.0,
+				AvgBreaking:     (prevSample.AvgBreaking + nextSample.AvgBreaking) / 2.0,
+				AvgHandbreak:    (prevSample.AvgHandbreak + nextSample.AvgHandbreak) / 2.0,
+				AvgGear:         (prevSample.AvgGear + nextSample.AvgGear) / 2.0,
+			}
+
+			newRoutePoints[i].X = (1-newSampleMult) * newRoutePoints[i].X + newSampleMult * samples[i].VehiclePositionX
+			newRoutePoints[i].Y = (1-newSampleMult) * newRoutePoints[i].Y + newSampleMult * samples[i].VehiclePositionY
+			newRoutePoints[i].Z = (1-newSampleMult) * newRoutePoints[i].Z + newSampleMult * samples[i].VehiclePositionZ
+			newRoutePoints[i].AvgVelocity =
+				(1-newSampleMult) * newRoutePoints[i].AvgVelocity +
+				newSampleMult * getVectorLen(
+					samples[i].VehicleVelocityX,
+					samples[i].VehicleVelocityY,
+					samples[i].VehicleVelocityZ,
+				)
+			newRoutePoints[i].AvgAcceleration =
+				(1-newSampleMult) * newRoutePoints[i].AvgAcceleration +
+				newSampleMult * getVectorLen(
+					samples[i].VehicleAccelerationX,
+					samples[i].VehicleAccelerationY,
+					samples[i].VehicleAccelerationZ,
+				)
+			newRoutePoints[i].AvgThrottle = (1-newSampleMult) * newRoutePoints[i].AvgThrottle + newSampleMult * samples[i].VehicleThrottle
+			newRoutePoints[i].AvgRpm =
+				(1-newSampleMult) * newRoutePoints[i].AvgRpm +
+				newSampleMult * (samples[i].VehicleEngineRpmCurrent / samples[i].VehicleEngineRpmMax)
+			newRoutePoints[i].AvgBreaking = (1-newSampleMult) * newRoutePoints[i].AvgBreaking + newSampleMult * samples[i].VehicleBrake
+			newRoutePoints[i].AvgHandbreak = (1-newSampleMult) * newRoutePoints[i].AvgHandbreak + newSampleMult * samples[i].VehicleHandbrake
+
+			gear := getGearIndex(samples[i].VehicleGearIndex, samples[i].VehicleGearIndexNeutral, samples[i].VehicleGearIndexReverse)
+			newRoutePoints[i].AvgGear =
+				(1-newSampleMult) * newRoutePoints[i].AvgGear +
+				newSampleMult * (float32(gear) / float32(samples[i].VehicleGearMaximum))
 		}
-		newRoutePoints[i].AvgGear =
-			(1-newSampleMult) * newRoutePoints[i].AvgGear +
-			newSampleMult * (float32(gear) / float32(samples[i].VehicleGearMaximum))
 	}
-
 
 	err = db.SetRoutePoints(routeID, newRoutePoints)
 	if err != nil {
