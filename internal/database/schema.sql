@@ -26,7 +26,7 @@ INSERT OR IGNORE INTO vehicle_classes(id, name) VALUES
 
 CREATE TABLE IF NOT EXISTS vehicle_manufacturers (
   id USMALLINT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO vehicle_manufacturers(id, name) VALUES
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
   class USMALLINT REFERENCES vehicle_classes(id),
   manufacturer USMALLINT REFERENCES vehicle_manufacturers(id),
   name TEXT,
-  builder BOOLEAN
+  builder BOOLEAN,
 );
 
 INSERT OR IGNORE INTO vehicles(id, class, manufacturer, name, builder) VALUES
@@ -174,7 +174,7 @@ INSERT OR IGNORE INTO vehicles(id, class, manufacturer, name, builder) VALUES
 
 CREATE TABLE IF NOT EXISTS vehicle_tyre_states (
   id USMALLINT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO vehicle_tyre_states(id, name) VALUES
@@ -184,7 +184,7 @@ INSERT OR IGNORE INTO vehicle_tyre_states(id, name) VALUES
 
 CREATE TABLE IF NOT EXISTS locations (
   id USMALLINT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO locations(id, name) VALUES
@@ -212,7 +212,7 @@ INSERT OR IGNORE INTO locations(id, name) VALUES
 CREATE TABLE IF NOT EXISTS routes (
   id USMALLINT PRIMARY KEY,
   location_id USMALLINT REFERENCES locations(id),
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO routes(id, location_id, name) VALUES
@@ -471,7 +471,7 @@ INSERT OR IGNORE INTO routes(id, location_id, name) VALUES
 
 CREATE TABLE IF NOT EXISTS game_modes (
   id USMALLINT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO game_modes(id, name) VALUES
@@ -488,7 +488,7 @@ INSERT OR IGNORE INTO game_modes(id, name) VALUES
 
 CREATE TABLE IF NOT EXISTS stage_result_states (
   id USMALLINT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 INSERT OR IGNORE INTO stage_result_states(id, name) VALUES
@@ -502,7 +502,7 @@ INSERT OR IGNORE INTO stage_result_states(id, name) VALUES
 
 CREATE TABLE IF NOT EXISTS users (
   id TEXT PRIMARY KEY,
-  name TEXT
+  name TEXT,
 );
 
 CREATE TABLE IF NOT EXISTS user_logins (
