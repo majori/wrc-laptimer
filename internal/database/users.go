@@ -33,6 +33,12 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 			slog.Info("user created", "id", id)
 		}
 
+		err = d.LogoutUser()
+		if err != nil {
+			slog.Error("error when logging out user", "error", err)
+			continue
+		}
+
 		// Insert the user login into the database
 		_, err = d.exec(`
 			INSERT INTO user_logins (user_id) 
@@ -40,6 +46,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 		`, id)
 		if err != nil {
 			slog.Error("error inserting user login", "error", err)
+			continue
 		}
 
 		slog.Info("user logged in", "id", id)
@@ -59,7 +66,6 @@ func (d *Database) CreateUser(id string) error {
 }
 
 func (d *Database) GetActiveUserID() (sql.NullString, error) {
-	// TODO: Figure out if user has logged in but is not active (too much time from last session)
 	var id sql.NullString
 	err := d.queryRow(`
 		SELECT u.id
@@ -81,25 +87,14 @@ func (d *Database) GetActiveUserID() (sql.NullString, error) {
 	return id, nil
 }
 
-func (d *Database) LogoutActiveUser() error {
-	id, err := d.GetActiveUserID()
-	if err != nil {
-		return err
-	}
-	if !id.Valid {
-		return nil
-	}
-	_, err = d.exec(`
+func (d *Database) LogoutUser() error {
+	_, err := d.exec(`
 		UPDATE user_logins
 		SET active = false
-		WHERE user_id = ?
-			AND active IS true
-	`, id.String)
-	if err != nil {
-		return err
-	}
+		WHERE active IS true
+	`)
 
-	slog.Info("user logged out due to inactivity", "id", id.String)
+	slog.Info("user logged out (if any)")
 
-	return nil
+	return err
 }

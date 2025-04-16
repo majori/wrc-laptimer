@@ -10,13 +10,13 @@ import (
 )
 
 func ProcessTelemetryEvents(ctx context.Context, db *database.Database, packetCh <-chan telemetry.TelemetryPacket) {
-	logoutDuration := 5 * time.Minute
-	logoutTimer := time.NewTimer(logoutDuration)
+	inactivityDuration := 5 * time.Minute
+	inactivityTimer := time.NewTimer(inactivityDuration)
 
 	for {
 		select {
 		case pkt := <-packetCh:
-			logoutTimer.Reset(logoutDuration)
+			inactivityTimer.Reset(inactivityDuration)
 
 			switch pkt := pkt.(type) {
 			case *telemetry.TelemetrySessionStart:
@@ -56,8 +56,9 @@ func ProcessTelemetryEvents(ctx context.Context, db *database.Database, packetCh
 			default:
 				slog.Warn("unknown packet type", "type", pkt)
 			}
-		case <-logoutTimer.C:
-			err := db.LogoutActiveUser()
+		case <-inactivityTimer.C:
+			slog.Info("inactivity timer triggered")
+			err := db.LogoutUser()
 			if err != nil {
 				slog.Error("could not logout user", "error", err)
 			}
