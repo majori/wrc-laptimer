@@ -22,7 +22,7 @@ var activeSeriesID sql.NullInt32
 func (d *Database) GetActiveSeriesID() (sql.NullInt32, error) {
 	if !activeSeriesID.Valid {
 		var id int
-		err := d.db.QueryRowContext(d.ctx, `
+		err := d.queryRow(`
 			SELECT id
 			FROM race_series
 			WHERE active = true
@@ -42,7 +42,7 @@ func (d *Database) GetActiveSeriesID() (sql.NullInt32, error) {
 
 func (d *Database) CreateSeries(name string, vehicleClassID sql.NullInt16) (int, error) {
 	var id int
-	err := d.db.QueryRowContext(d.ctx, `
+	err := d.queryRow(`
 		INSERT INTO race_series (name, vehicle_class_id)
 		VALUES (?, ?)
 		RETURNING id;
@@ -54,7 +54,7 @@ func (d *Database) CreateSeries(name string, vehicleClassID sql.NullInt16) (int,
 }
 
 func (d *Database) StartSeries(id int) error {
-	_, err := d.db.ExecContext(d.ctx, `
+	_, err := d.exec(`
 		UPDATE race_series
 		SET active = true,
 			started_at = CURRENT_TIMESTAMP
@@ -68,7 +68,7 @@ func (d *Database) StartSeries(id int) error {
 }
 
 func (d *Database) EndSeries(id int) error {
-	_, err := d.db.ExecContext(d.ctx, `
+	_, err := d.exec(`
 		UPDATE race_series
 		SET active = false,
 			ended_at = CURRENT_TIMESTAMP
@@ -88,7 +88,7 @@ func (d *Database) EndSeries(id int) error {
 
 func (d *Database) GetSeries(id int) (*RaceSerie, error) {
 	var series RaceSerie
-	err := d.db.QueryRowContext(d.ctx, `
+	err := d.queryRow(`
 		SELECT id, name, vehicle_class_id, point_scale, active, created_at, started_at, ended_at
 		FROM race_series
 		WHERE id = ?;

@@ -33,7 +33,7 @@ func (d *Database) GetResultsBySeriesID(seriesID int, HCMode bool) ([]Result, er
 		JOIN race_events e ON r.race_event_id = e.id
 		WHERE e.race_series_id = ? AND r.hc_mode = ?
 	`
-	rows, err := d.db.Query(query, seriesID, HCMode)
+	rows, err := d.query(query, seriesID, HCMode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -215,7 +215,7 @@ func (d *Database) StoreSeriesResult(result SeriesResult) error {
 			created_at
 		) VALUES (?, ?, ?, ?, ?, ?, ?, NOW());
 	`
-	_, err := d.db.Exec(query,
+	_, err := d.exec(query,
 		result.UserID,
 		result.RaceSeriesID,
 		result.Points,

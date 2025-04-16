@@ -41,7 +41,7 @@ func (d *Database) GetActiveEventID(eventVehicleClassID int16) (sql.NullInt32, e
 	`
 	var eventID sql.NullInt32
 	var vehicleClassID sql.NullInt16
-	err := d.db.QueryRow(query).Scan(&eventID, &vehicleClassID)
+	err := d.queryRow(query).Scan(&eventID, &vehicleClassID)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return sql.NullInt32{}, nil // No active event found
@@ -60,7 +60,7 @@ func (d *Database) CreateEvent(name string, seriesID sql.NullInt32, locationID s
 		RETURNING id
 	`
 	var eventID int
-	err := d.db.QueryRow(query, name, seriesID, locationID, routeID, vehicleClassID).Scan(&eventID)
+	err := d.queryRow(query, name, seriesID, locationID, routeID, vehicleClassID).Scan(&eventID)
 	if err != nil {
 		return 0, fmt.Errorf("failed to create event: %w", err)
 	}
@@ -73,7 +73,7 @@ func (d *Database) StartEvent(id int) error {
 		SET active = TRUE, started_at = CURRENT_TIMESTAMP
 		WHERE id = ? AND active = FALSE
 	`
-	result, err := d.db.Exec(query, id)
+	result, err := d.exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to start event: %w", err)
 	}
@@ -88,7 +88,7 @@ func (d *Database) StartEvent(id int) error {
 
 	// Get the vehicle class ID for the active event if exists
 	query = "SELECT vehicle_class_id FROM race_events WHERE id = ?"
-	err = d.db.QueryRow(query, id).Scan(&activeVehicleClassID)
+	err = d.queryRow(query, id).Scan(&activeVehicleClassID)
 	if err != nil {
 		return fmt.Errorf("failed to fetch vehicle class ID: %w", err)
 	}
@@ -102,7 +102,7 @@ func (d *Database) EndEvent(id int) error {
 		SET active = FALSE, ended_at = CURRENT_TIMESTAMP
 		WHERE id = ? AND active = TRUE
 	`
-	result, err := d.db.Exec(query, id)
+	result, err := d.exec(query, id)
 	if err != nil {
 		return fmt.Errorf("failed to end event: %w", err)
 	}
@@ -143,7 +143,7 @@ func (d *Database) GetSeriesEvents(seriesID int) ([]RaceEvent, error) {
 		WHERE race_series_id = ?
 		ORDER BY created_at DESC
 	`
-	rows, err := d.db.Query(query, seriesID)
+	rows, err := d.query(query, seriesID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch series events: %w", err)
 	}
@@ -200,7 +200,7 @@ func (d *Database) GetEvent(id int) (*RaceEvent, error) {
 		WHERE id = ?
 	`
 	var event RaceEvent
-	err := d.db.QueryRow(query, id).Scan(
+	err := d.queryRow(query, id).Scan(
 		&event.ID,
 		&event.Name,
 		&event.RaceSeriesID,

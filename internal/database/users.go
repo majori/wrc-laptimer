@@ -12,7 +12,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 	for id := range cardEvents {
 		// Check if the user already exists
 		var exists bool
-		err := d.db.QueryRowContext(d.ctx, `
+		err := d.queryRow(`
 			SELECT EXISTS (
 				SELECT 1
 				FROM users
@@ -34,7 +34,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 		}
 
 		// Insert the user login into the database
-		_, err = d.db.ExecContext(d.ctx, `
+		_, err = d.exec(`
 			INSERT INTO user_logins (user_id) 
 			VALUES (?)
 		`, id)
@@ -48,7 +48,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 
 func (d *Database) CreateUser(id string) error {
 	name := username.GenerateFromSeed(id)
-	_, err := d.db.ExecContext(d.ctx, `
+	_, err := d.exec(`
 		INSERT INTO users (id, name)
 		VALUES (?, ?)
 	`, id, name)
@@ -61,7 +61,7 @@ func (d *Database) CreateUser(id string) error {
 func (d *Database) GetActiveUserID() (sql.NullString, error) {
 	// TODO: Figure out if user has logged in but is not active (too much time from last session)
 	var id sql.NullString
-	err := d.db.QueryRowContext(d.ctx, `
+	err := d.queryRow(`
 		SELECT u.id
 		FROM user_logins ul
 		JOIN users u ON ul.user_id = u.id
@@ -89,7 +89,7 @@ func (d *Database) LogoutActiveUser() error {
 	if !id.Valid {
 		return nil
 	}
-	_, err = d.db.ExecContext(d.ctx, `
+	_, err = d.exec(`
 		UPDATE user_logins
 		SET active = false
 		WHERE user_id = ?

@@ -76,3 +76,11 @@ func (d *Database) AppendTelemetry(t *telemetry.TelemetrySessionUpdate) error {
 func (d *Database) FlushTelemetry() error {
 	return d.appender.Flush()
 }
+
+func (d *Database) ClearTelemetry() error {
+	_, err := d.exec("DELETE FROM telemetry")
+	if err != nil {
+		return err
+	}
+	return nil
+}

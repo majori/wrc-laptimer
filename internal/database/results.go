@@ -32,7 +32,7 @@ type SessionResult struct {
 } */
 
 func (d *Database) QuerySessionResults(eventID int, query string) ([]SessionResult, error) {
-	rows, err := d.db.Query(query, eventID)
+	rows, err := d.query(query, eventID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to execute query: %w", err)
 	}
@@ -128,7 +128,7 @@ func (d *Database) StoreResults(results []Result) error {
 		VALUES (?, ?, NOW(), ?, ?, ?, ?)
 	`
 	for _, result := range results {
-		_, err := d.db.Exec(query, result.UserID, result.RaceEventID, result.Points, result.HCMode, result.Position, result.ResultTime)
+		_, err := d.exec(query, result.UserID, result.RaceEventID, result.Points, result.HCMode, result.Position, result.ResultTime)
 		if err != nil {
 			return fmt.Errorf("failed to store result for user %s: %w", result.UserID, err)
 		}
@@ -199,7 +199,7 @@ func (d *Database) GetPointsByEventID(eventID int, HCMode bool) ([]Result, error
 		ORDER BY 
 			position ASC
 	`
-	rows, err := d.db.Query(query, eventID, HCMode)
+	rows, err := d.query(query, eventID, HCMode)
 	if err != nil {
 		return nil, fmt.Errorf("failed to query points: %w", err)
 	}

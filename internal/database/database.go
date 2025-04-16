@@ -66,9 +66,22 @@ func (d *Database) Close() {
 	}
 }
 
+func (d *Database) exec(query string, args ...any) (sql.Result, error) {
+	return d.db.ExecContext(d.ctx, query, args...)
+}
+
+func (d *Database) query(query string, args ...any) (*sql.Rows, error) {
+	return d.db.QueryContext(d.ctx, query, args...)
+}
+
+func (d *Database) queryRow(query string, args ...any) *sql.Row {
+	return d.db.QueryRowContext(d.ctx, query, args...)
+}
+
+// Supports only SELECT queries. Safe(?) to execute from frontend
 func (d *Database) ExecuteSelectQuery(query string) (string, error) {
 	var result string
-	err := d.db.QueryRowContext(d.ctx, `
+	err := d.queryRow(`
 		SELECT COALESCE(CAST(to_json(list(t)) AS VARCHAR), '[]') 
 		FROM (SELECT * FROM json_execute_serialized_sql(json_serialize_sql(?::STRING))) t
 	`, query).Scan(&result)

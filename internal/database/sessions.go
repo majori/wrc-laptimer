@@ -24,7 +24,7 @@ func (d *Database) setActiveSessionVehicleClassID(id uint16) {
 }
 
 func (d *Database) StartSession(pkt *telemetry.TelemetrySessionStart) error {
-	session := d.db.QueryRowContext(d.ctx, `
+	session := d.queryRow(`
 		INSERT INTO sessions (
 			game_mode,
 			location_id,
@@ -66,7 +66,7 @@ func (d *Database) EndSession(pkt *telemetry.TelemetrySessionEnd) error {
 		return err
 	}
 
-	_, err = d.db.ExecContext(d.ctx, `
+	_, err = d.exec(`
 		UPDATE sessions
 		SET user_id = ?,
 			race_event_id = ?,
