@@ -14,12 +14,7 @@ export async function postQuery(queryPayload) {
 }
 
 // Generic function to fetch a single name from a table
-async function getNameById(
-  tableName,
-  id,
-  idColumn = "id",
-  defaultValue = "Unknown"
-) {
+async function getNameById(tableName, id, idColumn = "id", defaultValue = "Unknown") {
   try {
     const queryPayload = `SELECT name FROM ${tableName} WHERE ${idColumn} = ${id}`;
     const data = await postQuery(queryPayload);
@@ -44,12 +39,7 @@ export async function getVehicleName(vehicleId) {
 }
 
 export async function getManufacturerName(manufacturerId) {
-  return getNameById(
-    "vehicle_manufacturers",
-    manufacturerId,
-    "id",
-    "Unknown Manufacturer"
-  );
+  return getNameById("vehicle_manufacturers", manufacturerId, "id", "Unknown Manufacturer");
 }
 
 export async function getClassName(classId) {
@@ -74,7 +64,7 @@ export async function getSessionsByDay(date) {
             JOIN users ON sessions.user_id = users.id 
             JOIN vehicles ON sessions.vehicle_id = vehicles.id
             WHERE sessions.started_at BETWEEN '${startOfDay}' AND '${endOfDay}'
-            AND stake_shakedown IS FALSE`;
+            AND stage_shakedown IS FALSE`;
 
     const data = await postQuery(queryPayload);
     return data;
@@ -90,6 +80,7 @@ export async function getCurrentDriver() {
     const queryPayload = `SELECT users.name AS user_name
               FROM user_logins
               JOIN users ON user_logins.user_id = users.id
+              WHERE user_logins.active IS true
               ORDER BY user_logins.timestamp DESC
               LIMIT 1;`;
     const data = await postQuery(queryPayload);

@@ -507,7 +507,8 @@ CREATE TABLE IF NOT EXISTS users (
 
 CREATE TABLE IF NOT EXISTS user_logins (
   timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  user_id TEXT REFERENCES users(id),
+  user_id   TEXT REFERENCES users(id),
+  active    BOOLEAN DEFAULT true,
 );
 
 CREATE SEQUENCE IF NOT EXISTS race_series_id_sequence START 1;

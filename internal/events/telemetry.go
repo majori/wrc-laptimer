@@ -3,15 +3,21 @@ package events
 import (
 	"context"
 	"log/slog"
+	"time"
 
 	"github.com/majori/wrc-laptimer/internal/database"
 	"github.com/majori/wrc-laptimer/pkg/telemetry"
 )
 
 func ProcessTelemetryEvents(ctx context.Context, db *database.Database, packetCh <-chan telemetry.TelemetryPacket) {
+	logoutDuration := 5 * time.Minute
+	logoutTimer := time.NewTimer(logoutDuration)
+
 	for {
 		select {
 		case pkt := <-packetCh:
+			logoutTimer.Reset(logoutDuration)
+
 			switch pkt := pkt.(type) {
 			case *telemetry.TelemetrySessionStart:
 				err := db.FlushTelemetry()
@@ -50,6 +56,12 @@ func ProcessTelemetryEvents(ctx context.Context, db *database.Database, packetCh
 			default:
 				slog.Warn("unknown packet type", "type", pkt)
 			}
+		case <-logoutTimer.C:
+			err := db.LogoutActiveUser()
+			if err != nil {
+				slog.Error("could not logout user", "error", err)
+			}
+
 		case <-ctx.Done():
 			slog.Info("exiting...")
 			return

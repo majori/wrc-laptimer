@@ -19,7 +19,6 @@ import (
 type Config struct {
 	ListenUDP  string `env:"LISTEN_UDP" envDefault:"127.0.0.1:20777"`
 	ListenHTTP string `env:"LISTEN_HTTP" envDefault:"127.0.0.1:8080"`
-	DisableNFC bool   `env:"DISABLE_NFC"`
 }
 
 var (
@@ -74,16 +73,12 @@ func main() {
 	}()
 
 	cardEvents := make(chan string, 1)
-	if !config.DisableNFC {
-		go func() {
-			err := nfc.ListenForCardEvents(ctx, cardEvents)
-			if err != nil {
-				slog.Error("could not start NFC reader", "error", err)
-			}
-		}()
-	} else {
-		slog.Info("NFC reader disabled")
-	}
+	go func() {
+		err := nfc.ListenForCardEvents(ctx, cardEvents)
+		if err != nil {
+			slog.Error("could not start NFC reader", "error", err)
+		}
+	}()
 
 	go db.ListenForUserLogins(cardEvents)
 

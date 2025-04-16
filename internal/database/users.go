@@ -68,6 +68,7 @@ func (d *Database) GetActiveUserID() (sql.NullString, error) {
 		WHERE ul.timestamp = (
 			SELECT MAX(timestamp)
 			FROM user_logins
+			WHERE active IS true
 		);
 	`).Scan(&id)
 	if err != nil {
@@ -78,4 +79,27 @@ func (d *Database) GetActiveUserID() (sql.NullString, error) {
 		return sql.NullString{}, fmt.Errorf("could not get active user: %w", err)
 	}
 	return id, nil
+}
+
+func (d *Database) LogoutActiveUser() error {
+	id, err := d.GetActiveUserID()
+	if err != nil {
+		return err
+	}
+	if !id.Valid {
+		return nil
+	}
+	_, err = d.db.ExecContext(d.ctx, `
+		UPDATE user_logins
+		SET active = false
+		WHERE user_id = ?
+			AND active IS true
+	`, id.String)
+	if err != nil {
+		return err
+	}
+
+	slog.Info("user logged out due to inactivity", "id", id.String)
+
+	return nil
 }
