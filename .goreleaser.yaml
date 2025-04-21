@@ -3,11 +3,12 @@ version: 2
 builds:
   - id: wrc-laptimer
     dir: cmd/wrc-laptimer
+    env:
+      - CGO_ENABLED=1
     goos:
-      - linux
-      - windows
+      - ""
     goarch:
-      - amd64
+      - ""
     # hooks:
     #   pre: task web:build
 
@@ -20,4 +21,4 @@ archives:
         formats: [zip]
 
 checksum:
-  name_template: "{{ .ProjectName }}-checksums.txt"
+  name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}-checksum.txt"
