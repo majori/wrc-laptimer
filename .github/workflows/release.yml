@@ -36,10 +36,16 @@ jobs:
     name: Publish artifacts
     needs: release
     if: ${{ needs.release.outputs.release_created }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     permissions:
       contents: write
-      pull-requests: write
+    strategy:
+      fail-fast: false
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -48,16 +54,28 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: "1.24"
+          cache: true
 
       - uses: arduino/setup-task@v2
         with:
           version: 3.x
-          repo-token: ${{ secrets.GITHUB_TOKEN }} # https://github.com/arduino/setup-task#repo-token
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install pcsc-lite on Linux
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y pcscd libpcsclite1 libpcsclite-dev
+
+      - name: Install dependencies (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          choco install yq
+
+      - name: Modify goreleaser config
+        shell: bash
+        run: yq --inplace ".builds[0].goos[0] = \"$(go env GOOS)\" | .builds[0].goarch[0] = \"$(go env GOARCH)\"" .goreleaser.yaml
 
       - uses: goreleaser/goreleaser-action@v6
         with:
@@ -66,7 +84,17 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Pass any additional environment variables needed for your build
 
+  post-publish:
+    name: Post-publish tasks
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
       - uses: actions/github-script@v7
         name: Update release label on PR
         with:
