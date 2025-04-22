@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.0](https://github.com/majori/wrc-laptimer/compare/v0.0.1...v0.1.0) (2025-04-22)
+
+
+### Features
+
+* clear telemetry after each session ([70ca30a](https://github.com/majori/wrc-laptimer/commit/70ca30a96d1dfd131595c9d3384aaafce5ee2ee6))
+* discard packets which are out of order ([af77c1a](https://github.com/majori/wrc-laptimer/commit/af77c1a199ac88a7832094f315ce35890c20c0cd))
+
 ## 0.0.1 (2025-04-21)
 
 
