@@ -33,6 +33,7 @@ func (d *Database) ListenForUserLogins(cardEvents <-chan string) {
 			slog.Info("user created", "id", id)
 		}
 
+		// Logout previous user
 		err = d.LogoutUser()
 		if err != nil {
 			slog.Error("error when logging out user", "error", err)
@@ -94,7 +95,10 @@ func (d *Database) LogoutUser() error {
 		WHERE active IS true
 	`)
 
-	slog.Info("user logged out (if any)")
+	if err != nil {
+		return err
+	}
 
-	return err
+	slog.Info("user logged out (if any)")
+	return nil
 }

@@ -2,6 +2,7 @@ package events
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -49,12 +50,16 @@ func ProcessTelemetryEvents(ctx context.Context, db *database.Database, packetCh
 				}
 				slog.Info("session ended")
 
+				// Clear telemetry data after each session for now
+				//nolint:errcheck
+				db.ClearTelemetry()
+
 			case *telemetry.TelemetrySessionPause:
 				continue
 			case *telemetry.TelemetrySessionResume:
 				continue
 			default:
-				slog.Warn("unknown packet type", "type", pkt)
+				slog.Warn("unknown packet type", "type", fmt.Sprintf("%T", pkt))
 			}
 		case <-inactivityTimer.C:
 			slog.Info("inactivity timer triggered")
