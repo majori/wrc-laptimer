@@ -25,8 +25,9 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 
 	done := make(chan error, 1)
 	go func() {
-		// Create a buffer large enough
+		var latestPacketID uint64
 		b := make([]byte, 256)
+
 		for {
 			n, _, err := conn.ReadFrom(b)
 			if err != nil {
@@ -35,14 +36,18 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 			}
 
 			// Process only the bytes that were read
-			_, pkt, err := UnmarshalBinary(b[:n])
+			header, pkt, err := UnmarshalBinary(b[:n])
 			if err != nil {
 				done <- err
 				continue
 			}
 
-			// TODO: Drop packets which are in wrong order
+			// Ignore packets which come in wrong order
+			if header.PacketUid < latestPacketID && header.PacketUid != 0 {
+				continue
+			}
 
+			latestPacketID = header.PacketUid
 			ch <- pkt
 		}
 	}()
@@ -50,6 +55,6 @@ func StartUDPReceiver(ctx context.Context, listen string, ch chan<- any) error {
 	case err := <-done:
 		return err
 	case <-ctx.Done():
+		return nil
 	}
-	return nil
 }
