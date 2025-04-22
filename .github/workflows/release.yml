@@ -75,7 +75,12 @@ jobs:
 
       - name: Modify goreleaser config
         shell: bash
-        run: yq --inplace ".builds[0].goos[0] = \"$(go env GOOS)\" | .builds[0].goarch[0] = \"$(go env GOARCH)\"" .goreleaser.yaml
+        run: >-
+          GOOS=$(go env GOOS)
+          GOARCH=$(go env GOARCH)
+          yq --inplace
+          '.builds[0].goos[0] = strenv(GOOS) | .builds[0].goarch[0] = strenv(GOARCH)'
+          .goreleaser.yaml
 
       - uses: goreleaser/goreleaser-action@v6
         with:
@@ -84,7 +89,6 @@ jobs:
           args: release --skip=validate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Pass any additional environment variables needed for your build
 
   post-publish:
     name: Post-publish tasks
